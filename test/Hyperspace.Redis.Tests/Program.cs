@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Hyperspace.Redis.Metadata.Builders;
 using Microsoft.Framework.DependencyInjection;
 using StackExchange.Redis;
 
@@ -23,13 +25,37 @@ namespace Hyperspace.Redis.Tests
         }
     }
 
+
+
     public class ForumContext : RedisContext
     {
+        public RedisText Announcement { get; set; }
+
         public RedisEntrySet<ForumDiscussion> Discussions { get; set; }
+        public RedisEntrySet<ForumDiscussion, Guid> Comments { get; set; }
+
+        protected internal virtual void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            var builder = (ModelBuilder<ForumContext>)modelBuilder;
+            builder.Entry(f => f.Announcement).HasKey();
+
+            builder.EntrySet(f => f.Discussions, dsb =>
+            {
+                dsb.ItemEntry(db =>
+                {
+                    db.SubEntry(d => d.Title);
+                    db.SubEntry(d => d.Author);
+                    db.SubEntry(d => d.AuthorID);
+                    db.SubEntry(d => d.CountViews);
+                    db.SubEntry(d => d.CountFollows);
+                    db.SubEntry(d => d.CountComments);
+                });
+            });
+        }
 
     }
 
-    public class ForumDiscussion : RedisString
+    public class ForumDiscussion : RedisSortedSet<Guid>
     {
         public ForumDiscussion(RedisContext context, RedisKey key) : base(context, key)
         {
@@ -45,4 +71,10 @@ namespace Hyperspace.Redis.Tests
 
     }
 
+    public class ForumComment : RedisHash
+    {
+        public ForumComment(RedisContext context, RedisKey key) : base(context, key)
+        {
+        }
+    }
 }
