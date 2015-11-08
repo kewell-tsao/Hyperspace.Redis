@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0-*",
+  "description": "Hyperspace.Redis.Bootstrap Console Application",
+  "authors": [ "Kewell" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+
+  "dependencies": {
+    "redis-64": "2.8.2101"
+  },
+
+  "commands": {
+    "Hyperspace.Redis.Bootstrap": "Hyperspace.Redis.Bootstrap"
+  },
+
+  "frameworks": {
+    "dnx451": { }
+  }
+}
