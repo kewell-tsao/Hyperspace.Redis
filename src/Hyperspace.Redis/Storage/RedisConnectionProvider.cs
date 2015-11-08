@@ -4,11 +4,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using StackExchange.Redis;
 using Hyperspace.Redis.Infrastructure;
+using Hyperspace.Redis.Internal;
+using Microsoft.Framework.Logging;
 
 namespace Hyperspace.Redis.Storage
 {
     public class RedisConnectionProvider : IRedisConnectionProvider
     {
+        private readonly ILoggerFactory _loggerFactory;
+
+        public RedisConnectionProvider(ILoggerFactory loggerFactory)
+        {
+            _loggerFactory = loggerFactory;
+        }
+
         public RedisConnection Connect(IRedisContextOptions options)
         {
             Check.NotNull(options, nameof(options));
@@ -20,8 +29,9 @@ namespace Hyperspace.Redis.Storage
                 configuration = ConfigurationOptions.Parse(connectionOptions.ConfigurationString);
             if (configuration == null)
                 throw new InvalidOperationException();
-            var connectionMultiplexer = ConnectionMultiplexer.Connect(configuration);
-            return new RedisConnection(connectionMultiplexer);
+            var logger = new RedisConnectionMultiplexerLogger(_loggerFactory.CreateLogger<ConnectionMultiplexer>());
+            var connectionMultiplexer = ConnectionMultiplexer.Connect(configuration, logger);
+            return new RedisConnection(connectionMultiplexer, _loggerFactory);
         }
 
         public RedisDatabase ConnectAndSelect(IRedisContextOptions options)

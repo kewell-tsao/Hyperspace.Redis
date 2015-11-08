@@ -4,13 +4,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using StackExchange.Redis;
 using Hyperspace.Redis.Infrastructure;
+using Microsoft.Framework.Logging;
 
 namespace Hyperspace.Redis.Storage
 {
     public class RedisConnection : IRedisConnection
     {
-        public RedisConnection(ConnectionMultiplexer connection)
+        private readonly ILoggerFactory _loggerFactory;
+
+        public RedisConnection(ConnectionMultiplexer connection, ILoggerFactory loggerFactory)
         {
+            _loggerFactory = loggerFactory;
             Connection = connection;
         }
 
