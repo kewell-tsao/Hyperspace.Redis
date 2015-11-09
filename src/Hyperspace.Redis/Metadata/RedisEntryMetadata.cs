@@ -7,50 +7,34 @@ using System.Reflection;
 
 namespace Hyperspace.Redis.Metadata
 {
-    public class RedisModel
+    public class ModelMetadata
     {
-        public ICollection<RedisEntryMetadata> Children { get; set; }
+        public string Name { get; set; }
+        public string Prefix { get; set; }
+        public Type ClrType { get; set; }
+
+        public ICollection<EntryMetadata> Children { get; } = new List<EntryMetadata>();
     }
 
-    public class RedisEntryMetadata
+    public class EntryMetadata
     {
-        private readonly List<RedisEntryMetadata> _children;
+        public ModelMetadata Model { get; set; }
 
-        public RedisEntryMetadata([NotNull] string name, [NotNull] Type clrType, RedisEntryType entryType, [NotNull] RedisModel model)
-        {
-            Check.NotEmpty(name, nameof(name));
-            Check.NotNull(model, nameof(model));
-            Check.NotNull(clrType, nameof(clrType));
-            if (clrType.GetTypeInfo().IsClass)
-                throw new ArgumentException(nameof(clrType));
+        public string Name { get; set; }
+        public string ShortName { get; set; }
+        public Type ClrType { get; set; }
+        public RedisEntryType EntryType { get; set; }
 
-            Name = name;
-            ClrType = clrType;
-            Model = model;
-            EntryType = entryType;
+        public bool IsEntrySetItem => Parent is EntrySetMetadata;
 
-            Parent = null;
-            _children = new List<RedisEntryMetadata>();
-        }
-
-        public RedisEntryMetadata([NotNull] string name, [NotNull] Type clrType, RedisEntryType entryType, [NotNull] RedisEntryMetadata parent)
-            : this(name, clrType, entryType, Check.NotNull(parent, nameof(parent)).Model)
-        {
-            Parent = parent;
-            Parent._children.Add(this);
-        }
-
-        public string Name { get; }
-        public Type ClrType { get; }
-        public RedisModel Model { get; }
-        public RedisEntryType EntryType { get; }
-
-        public RedisEntryMetadata Parent { get; }
-
-        public IReadOnlyCollection<RedisEntryMetadata> Children
-        {
-            get { return _children; }
-        }
+        public EntryMetadata Parent { get; set; }
+        public ICollection<EntryMetadata> Children { get; } = new List<EntryMetadata>();
 
     }
+
+    public class EntrySetMetadata : EntryMetadata
+    {
+
+    }
+
 }

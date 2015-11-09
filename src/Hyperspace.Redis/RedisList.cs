@@ -6,6 +6,7 @@ using StackExchange.Redis;
 
 namespace Hyperspace.Redis
 {
+    [RedisEntryType(RedisEntryType.List)]
     public class RedisList : RedisEntry
     {
         public RedisList(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.List)

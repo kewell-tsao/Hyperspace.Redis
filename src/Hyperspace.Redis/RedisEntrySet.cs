@@ -8,28 +8,32 @@ namespace Hyperspace.Redis
 {
     public class RedisEntrySet<TEntry, TIdentifier> : RedisEntry where TEntry : RedisEntry
     {
-        private readonly Func<RedisContext, RedisKey, TEntry> _constructor;
-
-        public RedisEntrySet(RedisContext context, RedisKey key, Func<RedisContext, RedisKey, TEntry> constructor) : base(context, key, RedisEntryType.Set)
+        public RedisEntrySet(RedisEntry parent, RedisKey key, RedisEntryType entryType) : base(parent, key, entryType)
         {
-            _constructor = constructor;
         }
 
-        public TEntry this[TIdentifier identifier]
+        public RedisEntrySet(RedisContext context, RedisKey key, RedisEntryType entryType) : base(context, key, entryType)
         {
-            get
-            {
-                return null;
-            }
+        }
+
+        public TEntry this[TIdentifier identifier] => GetSubEntry(this, identifier);
+
+        protected TEntry GetSubEntry(RedisEntry parent, TIdentifier identifier)
+        {
+            throw new NotImplementedException();
         }
 
     }
 
     public class RedisEntrySet<TEntry> : RedisEntrySet<TEntry, string> where TEntry : RedisEntry
     {
-        public RedisEntrySet(RedisContext context, RedisKey key, Func<RedisContext, RedisKey, TEntry> constructor) : base(context, key, constructor)
+        public RedisEntrySet(RedisEntry parent, RedisKey key, RedisEntryType entryType) : base(parent, key, entryType)
         {
         }
-    }
 
+        public RedisEntrySet(RedisContext context, RedisKey key, RedisEntryType entryType) : base(context, key, entryType)
+        {
+        }
+
+    }
 }

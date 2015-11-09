@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Hyperspace.Redis
 {
+    [RedisEntryType(RedisEntryType.String)]
     public class RedisString : RedisEntry
     {
         public RedisString(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.String)
@@ -384,9 +385,9 @@ namespace Hyperspace.Redis
 
     }
 
-    public class RedisCounter : RedisString
+    public class RedisNumber : RedisString
     {
-        public RedisCounter(RedisContext context, RedisKey key) : base(context, key)
+        public RedisNumber(RedisContext context, RedisKey key) : base(context, key)
         {
         }
 
@@ -421,26 +422,14 @@ namespace Hyperspace.Redis
             return Context.Database.StringGetSetAsync(Key, count).ContinueWith(t => t.Result.IsInteger ? (long?)t.Result : null);
         }
 
-        public static long operator +(RedisCounter counter, uint amount)
+        public static long operator +(RedisNumber counter, uint amount)
         {
             return counter.Increment(amount);
         }
 
-        public static RedisCounter operator ++(RedisCounter counter)
-        {
-            counter.Increment();
-            return counter;
-        }
-
-        public static long operator -(RedisCounter counter, uint amount)
+        public static long operator -(RedisNumber counter, uint amount)
         {
             return counter.Decrement(amount);
-        }
-
-        public static RedisCounter operator --(RedisCounter counter)
-        {
-            counter.Decrement();
-            return counter;
         }
 
     }

@@ -1,93 +1,271 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 using JetBrains.Annotations;
+using System.Reflection;
 
 namespace Hyperspace.Redis.Metadata.Builders
 {
-    public abstract class ModelBuilder
+    public class ModelBuilder
     {
-        protected internal ModelBuilder()
+        internal static Type GetPropertyType<T, TEntry>(Expression<Func<T, TEntry>> propertyExpression)
+            where TEntry : RedisEntry
         {
+            if (propertyExpression == null)
+                throw new ArgumentNullException(nameof(propertyExpression));
+
+            var body = propertyExpression.Body as MemberExpression;
+            if (body == null)
+                throw new ArgumentException("Invalid argument", nameof(propertyExpression));
+
+            var property = body.Member as PropertyInfo;
+            if (property == null)
+                throw new ArgumentException("Argument is not a property", nameof(propertyExpression));
+
+            return property.PropertyType;
         }
+
+        internal static string GetPropertyName<T, TEntry>(Expression<Func<T, TEntry>> propertyExpression)
+            where TEntry : RedisEntry
+        {
+            if (propertyExpression == null)
+                throw new ArgumentNullException(nameof(propertyExpression));
+
+            var body = propertyExpression.Body as MemberExpression;
+            if (body == null)
+                throw new ArgumentException("Invalid argument", nameof(propertyExpression));
+
+            var property = body.Member as PropertyInfo;
+            if (property == null)
+                throw new ArgumentException("Argument is not a property", nameof(propertyExpression));
+
+            return property.Name;
+        }
+
+        internal static RedisEntryType GetEntryType<TEntry>()
+            where TEntry : RedisEntry
+        {
+            return GetEntryType(typeof(TEntry));
+        }
+
+        internal static RedisEntryType GetEntryType(Type entryType)
+        {
+            var typeInfo = entryType.GetTypeInfo();
+            if (!typeInfo.IsSubclassOf(typeof(RedisEntry)))
+                throw new ArgumentException("This type is't subclass of RedisEntry.", nameof(entryType));
+            var types = typeInfo.GetCustomAttributes(true).OfType<RedisEntryTypeAttribute>().Select(a => a.Type).ToArray();
+            if (types.Length == 0)
+                return RedisEntryType.String;
+            if (types.Distinct().Count() > 1)
+                throw new ArgumentException("This type defines a number of different RedisEntryType.", nameof(entryType));
+            return types.First();
+        }
+
     }
 
     public class ModelBuilder<TContext> : ModelBuilder where TContext : RedisContext
     {
-        public EntryBuilder<TEntry> Entry<TEntry>([NotNull]Expression<Func<TContext, TEntry>> property)
+        private readonly ModelMetadata _metadata;
+
+        public ModelBuilder()
+        {
+            _metadata = new ModelMetadata
+            {
+                ClrType = typeof(TContext),
+                Name = typeof(TContext).GetTypeInfo().Name
+            };
+        }
+
+        public EntryBuilder<TEntry> Entry<TEntry>([NotNull] Expression<Func<TContext, TEntry>> property)
             where TEntry : RedisEntry
         {
-            return new EntryBuilder<TEntry>();
+            Check.NotNull(property, nameof(property));
+
+            var metadata = new EntryMetadata
+            {
+                Model = _metadata,
+                Name = GetPropertyName(property),
+                ClrType = GetPropertyType(property)
+            };
+            metadata.EntryType = GetEntryType(metadata.ClrType);
+            return new EntryBuilder<TEntry>(metadata);
         }
 
         public ModelBuilder<TContext> Entry<TEntry>([NotNull] Expression<Func<TContext, TEntry>> property, [NotNull] Action<EntryBuilder<TEntry>> buildAction)
             where TEntry : RedisEntry
         {
+            Check.NotNull(property, nameof(property));
+            Check.NotNull(buildAction, nameof(buildAction));
+
+            buildAction(Entry(property));
+
             return this;
         }
 
-        public EntrySetBuilder<TEntry> EntrySet<TEntry>([NotNull] Expression<Func<TContext, RedisEntrySet<TEntry>>> property)
+        public EntrySetBuilder<TEntry, TIdentifier> EntrySet<TEntry, TIdentifier>([NotNull] Expression<Func<TContext, RedisEntrySet<TEntry, TIdentifier>>> property)
             where TEntry : RedisEntry
         {
-            return new EntrySetBuilder<TEntry>();
+            Check.NotNull(property, nameof(property));
+
+            var metadata = new EntrySetMetadata
+            {
+                Model = _metadata,
+                Name = GetPropertyName(property),
+                ClrType = GetPropertyType(property)
+            };
+            metadata.EntryType = GetEntryType(metadata.ClrType);
+            return new EntrySetBuilder<TEntry, TIdentifier>(metadata);
         }
 
-        public ModelBuilder<TContext> EntrySet<TEntry>([NotNull] Expression<Func<TContext, RedisEntrySet<TEntry>>> property, [NotNull] Action<EntrySetBuilder<TEntry>> buildAction)
+        public ModelBuilder<TContext> EntrySet<TEntry, TIdentifier>(
+            [NotNull] Expression<Func<TContext, RedisEntrySet<TEntry, TIdentifier>>> property,
+            [NotNull] Action<EntrySetBuilder<TEntry, TIdentifier>> buildAction)
             where TEntry : RedisEntry
         {
+            Check.NotNull(property, nameof(property));
+            Check.NotNull(buildAction, nameof(buildAction));
+
+            buildAction(EntrySet(property));
+
             return this;
         }
 
     }
 
-    public abstract class EntryBuilder
+    public class EntryBuilder<TEntry> where TEntry : RedisEntry
     {
-        protected internal EntryBuilder()
-        {
-        }
-    }
+        private readonly EntryMetadata _metadata;
 
-    public class EntryBuilder<TEntry> : EntryBuilder where TEntry : RedisEntry
-    {
-        public void HasKey()
+        public EntryBuilder([NotNull] EntryMetadata metadata)
         {
+            Check.NotNull(metadata, nameof(metadata));
 
+            _metadata = metadata;
         }
 
-        public EntryBuilder<TSubEntry> SubEntry<TSubEntry>([NotNull]Expression<Func<TEntry, TSubEntry>> property)
+        public void ShortName(string shortName)
+        {
+            _metadata.ShortName = shortName;
+        }
+
+        public EntryBuilder<TSubEntry> SubEntry<TSubEntry>([NotNull] Expression<Func<TEntry, TSubEntry>> property)
             where TSubEntry : RedisEntry
         {
-            return new EntryBuilder<TSubEntry>();
+            Check.NotNull(property, nameof(property));
+
+            var metadata = new EntrySetMetadata
+            {
+                Model = _metadata.Model,
+                Parent = _metadata,
+                Name = ModelBuilder.GetPropertyName(property),
+                ClrType = ModelBuilder.GetPropertyType(property),
+            };
+            metadata.EntryType = ModelBuilder.GetEntryType(metadata.ClrType);
+            return new EntryBuilder<TSubEntry>(metadata);
         }
 
         public EntryBuilder<TEntry> SubEntry<TSubEntry>([NotNull] Expression<Func<TEntry, TSubEntry>> property, [NotNull] Action<EntryBuilder<TSubEntry>> buildAction)
             where TSubEntry : RedisEntry
         {
+            Check.NotNull(property, nameof(property));
+            Check.NotNull(buildAction, nameof(buildAction));
+
+            buildAction(SubEntry(property));
+
             return this;
         }
 
     }
 
-    public abstract class EntrySetBuilder: EntryBuilder
+    public class EntrySetBuilder<TEntry, TIdentifier> where TEntry : RedisEntry
     {
-        protected internal EntrySetBuilder()
-        {
-        }
-    }
+        private readonly EntrySetMetadata _metadata;
 
-    public class EntrySetBuilder<TEntry> : EntrySetBuilder where TEntry : RedisEntry
-    {
-        public EntryBuilder<TEntry> ItemEntry()
+        public EntrySetBuilder(EntrySetMetadata metadata)
         {
-            return new EntryBuilder<TEntry>();
+            Check.NotNull(metadata, nameof(metadata));
+
+            _metadata = metadata;
         }
 
-        public EntrySetBuilder<TEntry> ItemEntry([NotNull] Action<EntryBuilder<TEntry>> buildAction)
+        public EntrySetBuilder<TEntry, TIdentifier> ShortName(string shortName)
         {
             return this;
         }
+
+        public EntrySetBuilder<TEntry, TIdentifier> EntryType(RedisEntryType type)
+        {
+            _metadata.EntryType = type;
+            return this;
+        }
+
+        public EntrySetItemBuilder<TEntry, TIdentifier> EntrySetItem()
+        {
+            var metadata = new EntryMetadata
+            {
+                Parent = _metadata,
+                Model = _metadata.Model,
+                Name = typeof(TEntry).GetTypeInfo().Name,
+                ClrType = typeof(TEntry),
+            };
+            metadata.EntryType = ModelBuilder.GetEntryType(metadata.ClrType);
+            return new EntrySetItemBuilder<TEntry, TIdentifier>(metadata);
+        }
+
+        public EntrySetBuilder<TEntry, TIdentifier> EntrySetItem([NotNull] Action<EntrySetItemBuilder<TEntry, TIdentifier>> buildAction)
+        {
+            Check.NotNull(buildAction, nameof(buildAction));
+
+            buildAction(EntrySetItem());
+
+            return this;
+        }
+
+    }
+
+    public class EntrySetItemBuilder<TEntry, TIdentifier> where TEntry : RedisEntry
+    {
+        private readonly EntryMetadata _metadata;
+
+        public EntrySetItemBuilder(EntryMetadata metadata)
+        {
+            Check.NotNull(metadata, nameof(metadata));
+
+            _metadata = metadata;
+        }
+
+        public EntryBuilder<TSubEntry> SubEntry<TSubEntry>([NotNull]Expression<Func<TEntry, TSubEntry>> property)
+            where TSubEntry : RedisEntry
+        {
+            Check.NotNull(property, nameof(property));
+
+            var metadata = new EntryMetadata
+            {
+                Parent = _metadata,
+                Model = _metadata.Model,
+                Name = ModelBuilder.GetPropertyName(property),
+                ClrType = ModelBuilder.GetPropertyType(property),
+            };
+            metadata.EntryType = ModelBuilder.GetEntryType(metadata.ClrType);
+            return new EntryBuilder<TSubEntry>(metadata);
+        }
+
+        public EntrySetItemBuilder<TEntry, TIdentifier> SubEntry<TSubEntry>([NotNull] Expression<Func<TEntry, TSubEntry>> property, [NotNull] Action<EntryBuilder<TSubEntry>> buildAction)
+            where TSubEntry : RedisEntry
+        {
+            Check.NotNull(property, nameof(property));
+            Check.NotNull(buildAction, nameof(buildAction));
+
+            buildAction(SubEntry(property));
+
+            return this;
+        }
+
+        public EntrySetItemBuilder<TEntry, TIdentifier> MapKey()
+        {
+            return this;
+        }
+
     }
 
 }

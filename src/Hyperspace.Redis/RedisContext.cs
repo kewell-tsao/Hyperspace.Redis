@@ -7,6 +7,7 @@ using Microsoft.Framework.DependencyInjection;
 using StackExchange.Redis;
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 namespace Hyperspace.Redis
 {
@@ -43,6 +44,8 @@ namespace Hyperspace.Redis
             Initialize(serviceProvider, options);
         }
 
+        public IDatabase Database => _database.Database;
+
         private RedisContextOptions GetOptions(IServiceProvider serviceProvider)
         {
             if (serviceProvider == null)
@@ -63,7 +66,20 @@ namespace Hyperspace.Redis
             _database = (RedisDatabase)connectionProvider.ConnectAndSelect(options);
         }
 
-        public IDatabase Database { get { return _database.Database; } }
+        protected TEntry GetSubEntry<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
+        {
+            throw new NotImplementedException();
+        }
+
+        protected RedisEntrySet<TEntry> GetSubEntrySet<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
+        {
+            throw new NotImplementedException();
+        }
+
+        protected RedisEntrySet<TEntry, TIdentifier> GetSubEntrySet<TEntry, TIdentifier>([CallerMemberName] string name = null) where TEntry : RedisEntry
+        {
+            throw new NotImplementedException();
+        }
 
         #region IServiceProvider
 

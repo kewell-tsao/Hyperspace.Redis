@@ -18,9 +18,11 @@ namespace Hyperspace.Redis.Tests
             services.AddRedis()
                     .AddRedisContext<ForumContext>(options => options.UseConnection("localhost")
                                                                      .UseDatabase(0));
+            //pfx:Discussions:123:CountViews
+            //pfx:Discussions:123:CountComments
+
             var context = new ForumContext();
             context.Discussions["123"].CountViews.Increment();
-            context.Discussions["123"].CountViews++;
             var id = context.Discussions["123"].AuthorID.Get();
         }
     }
@@ -29,26 +31,38 @@ namespace Hyperspace.Redis.Tests
 
     public class ForumContext : RedisContext
     {
-        public RedisText Announcement { get; set; }
+        public RedisText Announcement => GetSubEntry<RedisText>();
 
-        public RedisEntrySet<ForumDiscussion> Discussions { get; set; }
-        public RedisEntrySet<ForumDiscussion, Guid> Comments { get; set; }
+        public RedisEntrySet<ForumDiscussion> Discussions => GetSubEntrySet<ForumDiscussion>();
+        public RedisEntrySet<ForumDiscussion, Guid> Comments => GetSubEntrySet<ForumDiscussion, Guid>();
 
         protected internal virtual void OnModelCreating(ModelBuilder modelBuilder)
         {
             var builder = (ModelBuilder<ForumContext>)modelBuilder;
-            builder.Entry(f => f.Announcement).HasKey();
+            builder.Entry(f => f.Announcement).ShortName("ann");
 
             builder.EntrySet(f => f.Discussions, dsb =>
             {
-                dsb.ItemEntry(db =>
+                dsb.ShortName("dis");
+                dsb.EntrySetItem(db =>
                 {
+                    db.MapKey();
+
                     db.SubEntry(d => d.Title);
                     db.SubEntry(d => d.Author);
                     db.SubEntry(d => d.AuthorID);
                     db.SubEntry(d => d.CountViews);
                     db.SubEntry(d => d.CountFollows);
                     db.SubEntry(d => d.CountComments);
+                });
+            });
+
+
+            builder.EntrySet(f => f.Comments, dsb =>
+            {
+                dsb.ShortName("dis");
+                dsb.EntrySetItem(db =>
+                {
                 });
             });
         }
@@ -61,13 +75,13 @@ namespace Hyperspace.Redis.Tests
         {
         }
 
-        public RedisText Title { get; set; }
-        public RedisText Author { get; set; }
-        public RedisGuid AuthorID { get; set; }
+        public RedisText Title => GetSubEntry<RedisText>(this);
+        public RedisText Author => GetSubEntry<RedisText>(this);
+        public RedisGuid AuthorID => GetSubEntry<RedisGuid>(this);
 
-        public RedisCounter CountViews { get; set; }
-        public RedisCounter CountFollows { get; set; }
-        public RedisCounter CountComments { get; set; }
+        public RedisNumber CountViews => GetSubEntry<RedisNumber>(this);
+        public RedisNumber CountFollows => GetSubEntry<RedisNumber>(this);
+        public RedisNumber CountComments => GetSubEntry<RedisNumber>(this);
 
     }
 

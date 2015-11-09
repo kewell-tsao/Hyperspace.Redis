@@ -6,6 +6,7 @@ using StackExchange.Redis;
 
 namespace Hyperspace.Redis
 {
+    [RedisEntryType(RedisEntryType.SortedSet)]
     public class RedisSortedSet : RedisEntry
     {
         public RedisSortedSet(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.SortedSet)

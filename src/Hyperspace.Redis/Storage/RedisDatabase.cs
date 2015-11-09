@@ -10,6 +10,10 @@ namespace Hyperspace.Redis.Storage
 {
     public class RedisDatabase: IRedisDatabase
     {
+        private const string EntryNameSeparator = ":";
+        private const string EntryIdentifierSeparator = "::";
+        private const string EscapedEntryNameSeparator = @"\x3A";
+
         public RedisDatabase([NotNull] RedisConnection connection, [NotNull] IDatabase database)
         {
             Check.NotNull(connection, nameof(connection));
@@ -25,6 +29,11 @@ namespace Hyperspace.Redis.Storage
         IRedisConnection IRedisDatabase.Connection
         {
             get { return Connection; }
+        }
+
+        private static string Escape(string s)
+        {
+            return s.Replace(EntryNameSeparator, EscapedEntryNameSeparator);
         }
 
     }
