@@ -1,6 +1,8 @@
 ﻿using StackExchange.Redis;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Hyperspace.Redis
 {
@@ -198,6 +200,27 @@ namespace Hyperspace.Redis
         }
 
         #endregion
+
+
+        private static RedisValue SerializeObject<T>(T value)
+        {
+            return JsonConvert.SerializeObject(value);
+        }
+
+        private static T DeserializeObject<T>(RedisValue value)
+        {
+            return JsonConvert.DeserializeObject<T>(value);
+        }
+
+        protected void SetProperty<T>(T value, [CallerMemberName] string propertyName = null)
+        {
+            Set(propertyName, SerializeObject(value));
+        }
+
+        protected T GetProperty<T>([CallerMemberName] string propertyName = null)
+        {
+            return DeserializeObject<T>(Get(propertyName));
+        }
 
     }
 }

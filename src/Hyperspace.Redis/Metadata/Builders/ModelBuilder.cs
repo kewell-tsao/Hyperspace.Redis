@@ -261,7 +261,7 @@ namespace Hyperspace.Redis.Metadata.Builders
             return this;
         }
 
-        public EntrySetItemBuilder<TEntry, TIdentifier> MapKey()
+        public EntrySetItemBuilder<TEntry, TIdentifier> Identifier([NotNull]Expression<Func<TEntry, TIdentifier>> property)
         {
             return this;
         }

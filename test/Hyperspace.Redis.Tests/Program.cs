@@ -33,7 +33,7 @@ namespace Hyperspace.Redis.Tests
     {
         public RedisText Announcement => GetSubEntry<RedisText>();
 
-        public RedisEntrySet<ForumDiscussion> Discussions => GetSubEntrySet<ForumDiscussion>();
+        public RedisEntrySet<ForumDiscussion, Guid> Discussions => GetSubEntrySet<ForumDiscussion, Guid>();
         public RedisEntrySet<ForumDiscussion, Guid> Comments => GetSubEntrySet<ForumDiscussion, Guid>();
 
         protected internal virtual void OnModelCreating(ModelBuilder modelBuilder)
@@ -46,7 +46,7 @@ namespace Hyperspace.Redis.Tests
                 dsb.ShortName("dis");
                 dsb.EntrySetItem(db =>
                 {
-                    db.MapKey();
+                    db.Identifier(d => d.ID);
 
                     db.SubEntry(d => d.Title);
                     db.SubEntry(d => d.Author);
@@ -74,6 +74,8 @@ namespace Hyperspace.Redis.Tests
         public ForumDiscussion(RedisContext context, RedisKey key) : base(context, key)
         {
         }
+
+        public Guid ID { get; set; }
 
         public RedisText Title => GetSubEntry<RedisText>(this);
         public RedisText Author => GetSubEntry<RedisText>(this);
