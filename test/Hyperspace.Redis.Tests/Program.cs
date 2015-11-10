@@ -22,8 +22,8 @@ namespace Hyperspace.Redis.Tests
             //pfx:Discussions:123:CountComments
 
             var context = new ForumContext();
-            context.Discussions["123"].CountViews.Increment();
-            var id = context.Discussions["123"].AuthorID.Get();
+            //context.Discussions["123"].CountViews.Increment();
+            //var id = context.Discussions["123"].AuthorID.Get();
         }
     }
 

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using StackExchange.Redis;
+﻿using Hyperspace.Redis.Infrastructure;
+using Microsoft.Framework.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using StackExchange.Redis;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Hyperspace.Redis
 {
@@ -357,34 +357,6 @@ namespace Hyperspace.Redis
 
     }
 
-    public class RedisJson<T> : RedisString
-    {
-        public RedisJson(RedisContext context, RedisKey key) : base(context, key)
-        {
-        }
-
-        public T Get()
-        {
-            return JsonConvert.DeserializeObject<T>(base.Get());
-        }
-
-        public async Task<T> GetAsync()
-        {
-            return JsonConvert.DeserializeObject<T>(await base.GetAsync());
-        }
-
-        public bool Set(T value)
-        {
-            return Set(JsonConvert.SerializeObject(value));
-        }
-
-        public Task<bool> SetAsync(T value)
-        {
-            return SetAsync(JsonConvert.SerializeObject(value));
-        }
-
-    }
-
     public class RedisNumber : RedisString
     {
         public RedisNumber(RedisContext context, RedisKey key) : base(context, key)
@@ -433,4 +405,36 @@ namespace Hyperspace.Redis
         }
 
     }
+
+    public class RedisObject<T> : RedisString
+    {
+        public RedisObject(RedisContext context, RedisKey key) : base(context, key)
+        {
+            Converter = new Lazy<IRedisValueConverter>(() => Context.GetRequiredService<IRedisValueConverter>());
+        }
+
+        protected readonly Lazy<IRedisValueConverter> Converter;
+
+        public T Get()
+        {
+            return Converter.Value.Deserialize<T>(base.Get());
+        }
+
+        public async Task<T> GetAsync()
+        {
+            return Converter.Value.Deserialize<T>(await base.GetAsync());
+        }
+
+        public bool Set(T value)
+        {
+            return Set(Converter.Value.Serialize(value));
+        }
+
+        public Task<bool> SetAsync(T value)
+        {
+            return SetAsync(Converter.Value.Serialize(value));
+        }
+
+    }
+
 }

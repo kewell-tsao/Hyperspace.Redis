@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json;
-using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using StackExchange.Redis;
 using System.Threading.Tasks;
 
 namespace Hyperspace.Redis
@@ -200,196 +196,34 @@ namespace Hyperspace.Redis
 
         #endregion
 
-    }
+        #region Sort
 
-    public class RedisList<T> : RedisList
-    {
-        static RedisList()
+        public RedisValue[] Sort(long skip = 0, long take = -1, Order order = Order.Ascending,
+            SortType sortType = SortType.Numeric, RedisValue by = default(RedisValue), RedisValue[] get = null,
+            CommandFlags flags = CommandFlags.None)
         {
-            var type = typeof(T);
-            if (type == typeof(RedisKey) ||
-                type == typeof(RedisValue) ||
-                type == typeof(bool) ||
-                type == typeof(bool?) ||
-                type == typeof(int) ||
-                type == typeof(int?) ||
-                type == typeof(long) ||
-                type == typeof(long?) ||
-                type == typeof(byte[]) ||
-                type == typeof(string) ||
-                type == typeof(double) ||
-                type == typeof(double?))
-                throw new InvalidOperationException();
+            return Context.Database.Sort(Key, skip, take, order, sortType, by, get, flags);
         }
 
-        public RedisList(RedisContext context, RedisKey key) : base(context, key)
+        public Task<RedisValue[]> SortAsync(long skip = 0, long take = -1, Order order = Order.Ascending,
+            SortType sortType = SortType.Numeric, RedisValue by = default(RedisValue), RedisValue[] get = null,
+            CommandFlags flags = CommandFlags.None)
         {
+            return Context.Database.SortAsync(Key, skip, take, order, sortType, by, get, flags);
         }
 
-        private static RedisValue SerializeObject(T value)
+        public long SortAndStore(RedisKey destination, long skip = 0, long take = -1,
+            Order order = Order.Ascending, SortType sortType = SortType.Numeric, RedisValue by = default(RedisValue),
+            RedisValue[] get = null, CommandFlags flags = CommandFlags.None)
         {
-            return JsonConvert.SerializeObject(value);
+            return Context.Database.SortAndStore(destination, Key, skip, take, order, sortType, by, get, flags);
         }
 
-        private static T DeserializeObject(RedisValue value)
+        public Task<long> SortAndStoreAsync(RedisKey destination, long skip = 0, long take = -1,
+            Order order = Order.Ascending, SortType sortType = SortType.Numeric, RedisValue by = default(RedisValue),
+            RedisValue[] get = null, CommandFlags flags = CommandFlags.None)
         {
-            return JsonConvert.DeserializeObject<T>(value);
-        }
-
-        #region Range
-
-        public new IEnumerable<T> Range(long start = 0, long stop = -1, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListRange(Key, start, stop, flags).Select(DeserializeObject);
-        }
-
-        public new async Task<IEnumerable<T>> RangeAsync(long start = 0, long stop = -1, CommandFlags flags = CommandFlags.None)
-        {
-            return (await Context.Database.ListRangeAsync(Key, start, stop, flags)).Select(DeserializeObject);
-        }
-
-        #endregion
-
-        #region Insert
-
-        public long InsertAfter(T pivot, T value, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListInsertAfter(Key, SerializeObject(pivot), SerializeObject(value), flags);
-        }
-
-        public Task<long> InsertAfterAsync(T pivot, T value, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListInsertAfterAsync(Key, SerializeObject(pivot), SerializeObject(value), flags);
-        }
-
-        public long InsertBefore(T pivot, T value, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListInsertBefore(Key, SerializeObject(pivot), SerializeObject(value), flags);
-        }
-
-        public Task<long> InsertBeforeAsync(T pivot, T value, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListInsertBeforeAsync(Key, SerializeObject(pivot), SerializeObject(value), flags);
-        }
-
-        #endregion
-
-        #region Remove
-
-        public long Remove(T value, long count = 0, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListRemove(Key, SerializeObject(value), count, flags);
-        }
-
-        public Task<long> RemoveAsync(T value, long count = 0, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListRemoveAsync(Key, SerializeObject(value), count, flags);
-        }
-
-        #endregion
-
-        #region Get & Set By Index
-
-        public new T GetByIndex(long index, CommandFlags flags = CommandFlags.None)
-        {
-            return DeserializeObject(Context.Database.ListGetByIndex(Key, index, flags));
-        }
-
-        public new async Task<T> GetByIndexAsync(long index, CommandFlags flags = CommandFlags.None)
-        {
-            return DeserializeObject(await Context.Database.ListGetByIndexAsync(Key, index, flags));
-        }
-
-        public void SetByIndex(long index, T value, CommandFlags flags = CommandFlags.None)
-        {
-            Context.Database.ListSetByIndex(Key, index, SerializeObject(value), flags);
-        }
-
-        public Task SetByIndexAsync(long index, T value, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListSetByIndexAsync(Key, index, SerializeObject(value), flags);
-        }
-
-        #endregion
-
-        #region Left Push & Pop
-
-        public long LeftPush(IEnumerable<T> values, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListLeftPush(Key, values.Select(SerializeObject).ToArray(), flags);
-        }
-
-        public Task<long> LeftPushAsync(IEnumerable<T> values, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListLeftPushAsync(Key, values.Select(SerializeObject).ToArray(), flags);
-        }
-
-        public long LeftPush(T value, When when = When.Always, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListLeftPush(Key, SerializeObject(value), when, flags);
-        }
-
-        public Task<long> LeftPushAsync(T value, When when = When.Always, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListLeftPushAsync(Key, SerializeObject(value), when, flags);
-        }
-
-        public new T LeftPop(CommandFlags flags = CommandFlags.None)
-        {
-            return DeserializeObject(Context.Database.ListLeftPop(Key, flags));
-        }
-
-        public new async Task<T> LeftPopAsync(CommandFlags flags = CommandFlags.None)
-        {
-            return DeserializeObject(await Context.Database.ListLeftPopAsync(Key, flags));
-        }
-
-        #endregion
-
-        #region Right Push & Pop
-
-        public long RightPush(IEnumerable<T> values, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListRightPush(Key, values.Select(SerializeObject).ToArray(), flags);
-        }
-
-        public Task<long> RightPushAsync(IEnumerable<T> values, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListRightPushAsync(Key, values.Select(SerializeObject).ToArray(), flags);
-        }
-
-        public long RightPush(T value, When when = When.Always, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListRightPush(Key, SerializeObject(value), when, flags);
-        }
-
-        public Task<long> RightPushAsync(T value, When when = When.Always, CommandFlags flags = CommandFlags.None)
-        {
-            return Context.Database.ListRightPushAsync(Key, SerializeObject(value), when, flags);
-        }
-
-        public new T RightPop(CommandFlags flags = CommandFlags.None)
-        {
-            return DeserializeObject(Context.Database.ListRightPop(Key, flags));
-        }
-
-        public new async Task<T> RightPopAsync(CommandFlags flags = CommandFlags.None)
-        {
-            return DeserializeObject(await Context.Database.ListRightPopAsync(Key, flags));
-        }
-
-        #endregion
-
-        #region Right Pop Left Push
-
-        public new T RightPopLeftPush(RedisKey destination, CommandFlags flags = CommandFlags.None)
-        {
-            return DeserializeObject(Context.Database.ListRightPopLeftPush(Key, destination, flags));
-        }
-
-        public new async Task<T> RightPopLeftPushAsync(RedisKey destination, CommandFlags flags = CommandFlags.None)
-        {
-            return DeserializeObject(await Context.Database.ListRightPopLeftPushAsync(Key, destination, flags));
+            return Context.Database.SortAndStoreAsync(destination, Key, skip, take, order, sortType, by, get, flags);
         }
 
         #endregion

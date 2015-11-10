@@ -1,8 +1,10 @@
-﻿using StackExchange.Redis;
+﻿using Hyperspace.Redis.Infrastructure;
+using Microsoft.Framework.DependencyInjection;
+using StackExchange.Redis;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace Hyperspace.Redis
 {
@@ -11,7 +13,10 @@ namespace Hyperspace.Redis
     {
         public RedisHash(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.Hash)
         {
+            Converter = new Lazy<IRedisValueConverter>(() => Context.GetRequiredService<IRedisValueConverter>());
         }
+
+        protected readonly Lazy<IRedisValueConverter> Converter;
 
         #region Increment & Decrement
 
@@ -201,26 +206,19 @@ namespace Hyperspace.Redis
 
         #endregion
 
+        #region Get & Set Property
 
-        private static RedisValue SerializeObject<T>(T value)
+        protected T GetProperty<T>([CallerMemberName] string propertyName = null)
         {
-            return JsonConvert.SerializeObject(value);
-        }
-
-        private static T DeserializeObject<T>(RedisValue value)
-        {
-            return JsonConvert.DeserializeObject<T>(value);
+            return Converter.Value.Deserialize<T>(Get(propertyName));
         }
 
         protected void SetProperty<T>(T value, [CallerMemberName] string propertyName = null)
         {
-            Set(propertyName, SerializeObject(value));
+            Set(propertyName, Converter.Value.Serialize(value));
         }
 
-        protected T GetProperty<T>([CallerMemberName] string propertyName = null)
-        {
-            return DeserializeObject<T>(Get(propertyName));
-        }
+        #endregion
 
     }
 }
