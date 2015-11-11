@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hyperspace.Redis.Metadata;
 using StackExchange.Redis;
 
 namespace Hyperspace.Redis
@@ -7,7 +8,7 @@ namespace Hyperspace.Redis
     [RedisEntryType(RedisEntryType.Set)]
     public class RedisSet : RedisEntry
     {
-        public RedisSet(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.Set)
+        public RedisSet(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Hyperspace.Redis.Metadata;
 
 namespace Hyperspace.Redis
 {
@@ -18,7 +19,7 @@ namespace Hyperspace.Redis
                 throw new InvalidOperationException();
         }
 
-        public RedisSet(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.Set)
+        public RedisSet(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
             Converter = new Lazy<IRedisValueConverter>(() => Context.GetRequiredService<IRedisValueConverter>());
         }

@@ -8,28 +8,35 @@ using Hyperspace.Redis.Internal;
 
 namespace Hyperspace.Redis.Metadata
 {
-    public class ModelMetadata
+    public class MetadataElement
+    {
+        public bool IsFrozen { get; private set; }
+    }
+
+    public class ModelMetadata : MetadataElement
     {
         public string Name { get; set; }
         public string Prefix { get; set; }
         public Type ClrType { get; set; }
 
-        public ICollection<EntryMetadata> Children { get; } = new List<EntryMetadata>();
+        public ICollection<RedisEntryMetadata> Children { get; } = new List<RedisEntryMetadata>();
+
+        internal RedisEntryActivator Activator { get; set; }
     }
 
-    public class EntryMetadata
+    public class RedisEntryMetadata : MetadataElement
     {
-        public EntryMetadata() : this(false)
+        public RedisEntryMetadata() : this(false)
         {
         }
 
-        public EntryMetadata(bool isEntrySet)
+        public RedisEntryMetadata(bool isEntrySet)
         {
             IsEntrySet = isEntrySet;
             if (IsEntrySet)
-                Children = new LimitedCollection<EntryMetadata>(1);
+                Children = new LimitedCollection<RedisEntryMetadata>(1);
             else
-                Children = new List<EntryMetadata>();
+                Children = new List<RedisEntryMetadata>();
         }
 
         public bool IsEntrySet { get; }
@@ -43,8 +50,10 @@ namespace Hyperspace.Redis.Metadata
         public Type IdentifierClrType { get; set; }
         public Type IdentifierConverterType { get; set; }
 
-        public EntryMetadata Parent { get; set; }
-        public ICollection<EntryMetadata> Children { get; }
+        public RedisEntryMetadata Parent { get; set; }
+        public ICollection<RedisEntryMetadata> Children { get; }
+
+        internal RedisEntryActivator Activator { get; set; }
     }
 
 }

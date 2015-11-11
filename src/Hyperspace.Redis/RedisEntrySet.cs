@@ -1,18 +1,41 @@
-﻿using StackExchange.Redis;
+﻿using JetBrains.Annotations;
+using System;
+using System.Collections.Generic;
+using Hyperspace.Redis.Metadata;
+using StackExchange.Redis;
 
 namespace Hyperspace.Redis
 {
     public sealed class RedisEntrySet<TEntry, TIdentifier> : RedisEntry where TEntry : RedisEntry
     {
-        public RedisEntrySet(RedisEntry parent, RedisKey key, RedisEntryType entryType) : base(parent, key, entryType)
+        public RedisEntrySet(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 
-        public RedisEntrySet(RedisContext context, RedisKey key, RedisEntryType entryType) : base(context, key, entryType)
-        {
-        }
+        private Dictionary<TIdentifier, TEntry> _cache;
 
-        public TEntry this[TIdentifier identifier] => Context.GetSubEntry<TEntry, TIdentifier>(this, identifier);
+        public TEntry this[[NotNull] TIdentifier identifier]
+        {
+            get
+            {
+                Check.NotNull(identifier, nameof(identifier));
+
+                TEntry result;
+                if (_cache != null && _cache.TryGetValue(identifier, out result))
+                {
+                    if (result == null)
+                        throw new InvalidOperationException();
+                    return result;
+                }
+                result = Metadata.Activator.CreateInstance(this, identifier);
+                if (result == null)
+                    throw new InvalidOperationException();
+                if (_cache == null)
+                    _cache = new Dictionary<TIdentifier, TEntry>();
+                _cache.Add(identifier, result);
+                return result;
+            }
+        }
 
     }
 }

@@ -1,32 +1,28 @@
 ﻿using JetBrains.Annotations;
 using StackExchange.Redis;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Hyperspace.Redis.Metadata;
 
 namespace Hyperspace.Redis
 {
     public abstract class RedisEntry : IEquatable<RedisEntry>
     {
-        protected internal RedisEntry([NotNull] RedisEntry parent, RedisKey key, RedisEntryType entryType)
+        protected internal RedisEntry(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent)
         {
-            Check.NotNull(parent, nameof(parent));
-            Check.NotNull(parent.Context, nameof(parent), nameof(parent.Context));
+            Check.NotNull(context, nameof(context));
+            Check.NotNull(metadata, nameof(metadata));
+            if (!metadata.IsFrozen)
+                throw new ArgumentException(nameof(metadata));
+            if (parent != null && parent.Context != context)
+                throw new ArgumentException(nameof(parent));
 
             Key = key;
             Parent = parent;
-            Context = parent.Context;
-            EntryType = entryType;
-        }
-
-        protected internal RedisEntry([NotNull] RedisContext context, RedisKey key, RedisEntryType entryType)
-        {
-            Check.NotNull(context, nameof(context));
-
-            Key = key;
-            Parent = null;
             Context = context;
-            EntryType = entryType;
+            Metadata = metadata;
         }
 
         #region Properties
@@ -34,22 +30,27 @@ namespace Hyperspace.Redis
         /// <summary>
         /// Redis条目的键
         /// </summary>
-        internal RedisKey Key { get; }
+        internal RedisKey Key { get; private set; }
 
         /// <summary>
         /// Redis条目的父条目
         /// </summary>
-        internal RedisEntry Parent { get; }
+        internal RedisEntry Parent { get; private set; }
 
         /// <summary>
         /// Redis条目的上下文
         /// </summary>
-        internal RedisContext Context { get; }
+        internal RedisContext Context { get; private set; }
 
         /// <summary>
         /// Redis条目的类型
         /// </summary>
-        internal RedisEntryType EntryType { get; }
+        internal RedisEntryType EntryType => Metadata.EntryType;
+
+        /// <summary>
+        /// Redis条目的元数据
+        /// </summary>
+        internal RedisEntryMetadata Metadata { get; private set; }
 
         #endregion
 
@@ -196,11 +197,32 @@ namespace Hyperspace.Redis
 
         #endregion
 
-        #region Protected Methods
+        #region GetEntry
 
-        protected TEntry GetSubEntry<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
+        private Dictionary<string, RedisEntry> _cache;
+
+        protected TEntry GetEntry<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
         {
-            return Context.GetSubEntry<TEntry>(this, name);
+            Check.NotEmpty(name, nameof(name));
+
+            RedisEntry entry;
+            if (_cache != null && _cache.TryGetValue(name, out entry))
+            {
+                var result = entry as TEntry;
+                if (result == null)
+                    throw new InvalidOperationException();
+                return result;
+            }
+            else
+            {
+                var result = Metadata.Activator.CreateInstance<TEntry>(this, name);
+                if (result == null)
+                    throw new InvalidOperationException();
+                if (_cache == null)
+                    _cache = new Dictionary<string, RedisEntry>(Metadata.Children.Count);
+                _cache.Add(name, result);
+                return result;
+            }
         }
 
         #endregion

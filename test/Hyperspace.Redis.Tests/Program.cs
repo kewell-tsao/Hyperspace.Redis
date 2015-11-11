@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Hyperspace.Redis.Metadata;
 using Hyperspace.Redis.Metadata.Builders;
 using Microsoft.Framework.DependencyInjection;
 using StackExchange.Redis;
@@ -29,10 +30,10 @@ namespace Hyperspace.Redis.Tests
 
     public class ForumContext : RedisContext
     {
-        public RedisText Announcement => GetSubEntry<RedisText>();
+        public RedisText Announcement => GetEntry<RedisText>();
 
-        public RedisEntrySet<ForumDiscussion, Guid> Discussions => GetSubEntrySet<ForumDiscussion, Guid>();
-        public RedisEntrySet<ForumDiscussion, Guid> Comments => GetSubEntrySet<ForumDiscussion, Guid>();
+        public RedisEntrySet<ForumDiscussion, Guid> Discussions => GetEntry<ForumDiscussion, Guid>();
+        public RedisEntrySet<ForumDiscussion, Guid> Comments => GetEntry<ForumDiscussion, Guid>();
 
         protected internal virtual void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -68,33 +69,32 @@ namespace Hyperspace.Redis.Tests
 
     public class ForumDiscussion : RedisHash
     {
-        public ForumDiscussion(RedisContext context, RedisKey key) : base(context, key)
+        public ForumDiscussion(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 
         public Guid ID => GetIdentifier<Guid>();
 
-        public RedisText Title => GetSubEntry<RedisText>();
-        public RedisText Author => GetSubEntry<RedisText>();
-        public RedisGuid AuthorID => GetSubEntry<RedisGuid>();
+        public RedisText Title => GetEntry<RedisText>();
+        public RedisText Author => GetEntry<RedisText>();
+        public RedisGuid AuthorID => GetEntry<RedisGuid>();
 
-        public RedisNumber CountViews => GetSubEntry<RedisNumber>();
-        public RedisNumber CountFollows => GetSubEntry<RedisNumber>();
-        public RedisNumber CountComments => GetSubEntry<RedisNumber>();
+        public RedisNumber CountViews => GetEntry<RedisNumber>();
+        public RedisNumber CountFollows => GetEntry<RedisNumber>();
+        public RedisNumber CountComments => GetEntry<RedisNumber>();
 
-        public RedisList<Guid> Comments => GetSubEntry<RedisList<Guid>>();
+        public RedisList<Guid> Comments => GetEntry<RedisList<Guid>>();
     }
 
     public class ForumComment : RedisHash
     {
-        public ForumComment(RedisContext context, RedisKey key) : base(context, key)
+        public ForumComment(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 
         public Guid ID => GetIdentifier<Guid>();
 
-        public RedisText Author => GetSubEntry<RedisText>();
-        public RedisGuid AuthorID => GetSubEntry<RedisGuid>();
-
+        public RedisText Author => GetEntry<RedisText>();
+        public RedisGuid AuthorID => GetEntry<RedisGuid>();
     }
 }

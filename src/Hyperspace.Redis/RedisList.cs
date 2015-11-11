@@ -1,12 +1,13 @@
 ﻿using StackExchange.Redis;
 using System.Threading.Tasks;
+using Hyperspace.Redis.Metadata;
 
 namespace Hyperspace.Redis
 {
     [RedisEntryType(RedisEntryType.List)]
     public class RedisList : RedisEntry
     {
-        public RedisList(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.List)
+        public RedisList(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 

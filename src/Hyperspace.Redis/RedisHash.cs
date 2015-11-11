@@ -5,13 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Hyperspace.Redis.Metadata;
 
 namespace Hyperspace.Redis
 {
     [RedisEntryType(RedisEntryType.Hash)]
     public class RedisHash : RedisEntry
     {
-        public RedisHash(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.Hash)
+        public RedisHash(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
             Converter = new Lazy<IRedisValueConverter>(() => Context.GetRequiredService<IRedisValueConverter>());
         }

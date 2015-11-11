@@ -86,7 +86,7 @@ namespace Hyperspace.Redis.Metadata.Builders
         {
             Check.NotNull(property, nameof(property));
 
-            var metadata = new EntryMetadata
+            var metadata = new RedisEntryMetadata
             {
                 Model = _metadata,
                 Name = GetPropertyName(property),
@@ -112,7 +112,7 @@ namespace Hyperspace.Redis.Metadata.Builders
         {
             Check.NotNull(property, nameof(property));
 
-            var metadata = new EntryMetadata(true)
+            var metadata = new RedisEntryMetadata(true)
             {
                 Model = _metadata,
                 Name = GetPropertyName(property),
@@ -138,9 +138,9 @@ namespace Hyperspace.Redis.Metadata.Builders
 
     public class EntryBuilder<TEntry> where TEntry : RedisEntry
     {
-        private readonly EntryMetadata _metadata;
+        private readonly RedisEntryMetadata _metadata;
 
-        public EntryBuilder([NotNull] EntryMetadata metadata)
+        public EntryBuilder([NotNull] RedisEntryMetadata metadata)
         {
             Check.NotNull(metadata, nameof(metadata));
 
@@ -157,7 +157,7 @@ namespace Hyperspace.Redis.Metadata.Builders
         {
             Check.NotNull(property, nameof(property));
 
-            var metadata = new EntryMetadata
+            var metadata = new RedisEntryMetadata
             {
                 Model = _metadata.Model,
                 Parent = _metadata,
@@ -184,7 +184,7 @@ namespace Hyperspace.Redis.Metadata.Builders
         {
             Check.NotNull(property, nameof(property));
 
-            var metadata = new EntryMetadata(true)
+            var metadata = new RedisEntryMetadata(true)
             {
                 Model = _metadata.Model,
                 Name = ModelBuilder.GetPropertyName(property),
@@ -208,9 +208,9 @@ namespace Hyperspace.Redis.Metadata.Builders
 
     public class EntrySetBuilder<TEntry, TIdentifier> where TEntry : RedisEntry
     {
-        private readonly EntryMetadata _metadata;
+        private readonly RedisEntryMetadata _metadata;
 
-        public EntrySetBuilder(EntryMetadata metadata)
+        public EntrySetBuilder(RedisEntryMetadata metadata)
         {
             Check.NotNull(metadata, nameof(metadata));
 
@@ -236,7 +236,7 @@ namespace Hyperspace.Redis.Metadata.Builders
 
         public EntryBuilder<TEntry> EntryItem()
         {
-            var metadata = new EntryMetadata
+            var metadata = new RedisEntryMetadata
             {
                 Parent = _metadata,
                 Model = _metadata.Model,

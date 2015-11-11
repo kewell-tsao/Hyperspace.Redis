@@ -6,13 +6,14 @@ using StackExchange.Redis;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Hyperspace.Redis.Metadata;
 
 namespace Hyperspace.Redis
 {
     [RedisEntryType(RedisEntryType.String)]
     public class RedisString : RedisEntry
     {
-        public RedisString(RedisContext context, RedisKey key) : base(context, key, RedisEntryType.String)
+        public RedisString(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 
@@ -236,7 +237,7 @@ namespace Hyperspace.Redis
 
     public class RedisText : RedisString
     {
-        public RedisText(RedisContext context, RedisKey key) : base(context, key)
+        public RedisText(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 
@@ -244,7 +245,7 @@ namespace Hyperspace.Redis
 
     public class RedisGuid : RedisString
     {
-        public RedisGuid(RedisContext context, RedisKey key) : base(context, key)
+        public RedisGuid(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 
@@ -315,7 +316,7 @@ namespace Hyperspace.Redis
 
     public class RedisJson : RedisString
     {
-        public RedisJson(RedisContext context, RedisKey key) : base(context, key)
+        public RedisJson(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 
@@ -359,7 +360,7 @@ namespace Hyperspace.Redis
 
     public class RedisNumber : RedisString
     {
-        public RedisNumber(RedisContext context, RedisKey key) : base(context, key)
+        public RedisNumber(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
         }
 
@@ -408,7 +409,7 @@ namespace Hyperspace.Redis
 
     public class RedisObject<T> : RedisString
     {
-        public RedisObject(RedisContext context, RedisKey key) : base(context, key)
+        public RedisObject(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
             Converter = new Lazy<IRedisValueConverter>(() => Context.GetRequiredService<IRedisValueConverter>());
         }

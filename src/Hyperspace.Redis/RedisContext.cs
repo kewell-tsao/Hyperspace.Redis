@@ -7,13 +7,35 @@ using Microsoft.Framework.DependencyInjection;
 using StackExchange.Redis;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Hyperspace.Redis.Metadata;
 
 namespace Hyperspace.Redis
 {
+    public class RedisEntryActivator
+    {
+        public TEntry CreateInstance<TEntry>(RedisContext context, string name) where TEntry : RedisEntry
+        {
+            return null;
+        }
+
+        public TEntry CreateInstance<TEntry>(RedisEntry parent, string name) where TEntry : RedisEntry
+        {
+            return null;
+        }
+
+        public TEntry CreateInstance<TEntry, TIdentifier>(RedisEntrySet<TEntry, TIdentifier> parent, TIdentifier identifier) where TEntry : RedisEntry
+        {
+            return null;
+        }
+    }
+
     public class RedisContext : IServiceProvider
     {
+        private ModelMetadata _model;
         private RedisDatabase _database;
+        private Dictionary<string, RedisEntry> _entryCache;
         private static readonly ConcurrentDictionary<Type, Type> OptionsTypes = new ConcurrentDictionary<Type, Type>();
 
         protected RedisContext()
@@ -62,45 +84,53 @@ namespace Hyperspace.Redis
 
         private void Initialize(IServiceProvider serviceProvider, RedisContextOptions options)
         {
+
             var connectionProvider = serviceProvider.GetRequiredService<IRedisConnectionProvider>();
             _database = (RedisDatabase)connectionProvider.ConnectAndSelect(options);
+            _entryCache = new Dictionary<string, RedisEntry>(_model.Children.Count);
         }
 
-        internal TEntry GetSubEntry<TEntry>(RedisEntry parent, string name) where TEntry : RedisEntry
-        {
-            Check.NotNull(parent, nameof(parent));
-            Check.NotEmpty(name, nameof(name));
-
-            throw new NotImplementedException();
-        }
-
-        internal TEntry GetSubEntry<TEntry, TIdentifier>(RedisEntry parent, TIdentifier identifier) where TEntry : RedisEntry
-        {
-            Check.NotNull(parent, nameof(parent));
-            Check.NotNull(identifier, nameof(identifier));
-
-            throw new NotImplementedException();
-        }
-
-        protected TEntry GetSubEntry<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
+        protected TEntry GetEntry<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
         {
             Check.NotEmpty(name, nameof(name));
-
-            throw new NotImplementedException();
+            RedisEntry entry;
+            if (_entryCache.TryGetValue(name, out entry))
+            {
+                var result = entry as TEntry;
+                if (result == null)
+                    throw new InvalidOperationException();
+                return result;
+            }
+            else
+            {
+                var result = _model.Activator.CreateInstance<TEntry>(this, name);
+                if (result == null)
+                    throw new InvalidOperationException();
+                _entryCache.Add(name, result);
+                return result;
+            }
         }
 
-        protected RedisEntrySet<TEntry> GetSubEntrySet<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
-        {
-            Check.NotEmpty(name, nameof(name));
-
-            throw new NotImplementedException();
-        }
-
-        protected RedisEntrySet<TEntry, TIdentifier> GetSubEntrySet<TEntry, TIdentifier>([CallerMemberName] string name = null) where TEntry : RedisEntry
+        protected RedisEntrySet<TEntry, TIdentifier> GetEntry<TEntry, TIdentifier>([CallerMemberName] string name = null) where TEntry : RedisEntry
         {
             Check.NotEmpty(name, nameof(name));
 
-            throw new NotImplementedException();
+            RedisEntry entry;
+            if (_entryCache.TryGetValue(name, out entry))
+            {
+                var result = entry as RedisEntrySet<TEntry, TIdentifier>;
+                if (result == null)
+                    throw new InvalidOperationException();
+                return result;
+            }
+            else
+            {
+                var result = _model.Activator.CreateInstance<RedisEntrySet<TEntry, TIdentifier>>(this, name);
+                if (result == null)
+                    throw new InvalidOperationException();
+                _entryCache.Add(name, result);
+                return result;
+            }
         }
 
         #region IServiceProvider
