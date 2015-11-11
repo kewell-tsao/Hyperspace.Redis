@@ -61,6 +61,11 @@ namespace Hyperspace.Redis.Metadata.Builders
             return types.First();
         }
 
+        public ModelBuilder<TContext> As<TContext>() where TContext : RedisContext
+        {
+            return this as ModelBuilder<TContext>;
+        }
+
     }
 
     public class ModelBuilder<TContext> : ModelBuilder where TContext : RedisContext
@@ -107,13 +112,12 @@ namespace Hyperspace.Redis.Metadata.Builders
         {
             Check.NotNull(property, nameof(property));
 
-            var metadata = new EntrySetMetadata
+            var metadata = new EntryMetadata(true)
             {
                 Model = _metadata,
                 Name = GetPropertyName(property),
                 ClrType = GetPropertyType(property)
             };
-            metadata.EntryType = GetEntryType(metadata.ClrType);
             return new EntrySetBuilder<TEntry, TIdentifier>(metadata);
         }
 
@@ -153,7 +157,7 @@ namespace Hyperspace.Redis.Metadata.Builders
         {
             Check.NotNull(property, nameof(property));
 
-            var metadata = new EntrySetMetadata
+            var metadata = new EntryMetadata
             {
                 Model = _metadata.Model,
                 Parent = _metadata,
@@ -175,13 +179,38 @@ namespace Hyperspace.Redis.Metadata.Builders
             return this;
         }
 
+        public EntrySetBuilder<TSubEntry, TIdentifier> SubEntrySet<TSubEntry, TIdentifier>([NotNull] Expression<Func<TEntry, RedisEntrySet<TSubEntry, TIdentifier>>> property)
+            where TSubEntry : RedisEntry
+        {
+            Check.NotNull(property, nameof(property));
+
+            var metadata = new EntryMetadata(true)
+            {
+                Model = _metadata.Model,
+                Name = ModelBuilder.GetPropertyName(property),
+                ClrType = ModelBuilder.GetPropertyType(property)
+            };
+            return new EntrySetBuilder<TSubEntry, TIdentifier>(metadata);
+        }
+
+        public EntryBuilder<TEntry> SubEntrySet<TSubEntry, TIdentifier>([NotNull] Expression<Func<TEntry, RedisEntrySet<TSubEntry, TIdentifier>>> property, [NotNull] Action<EntrySetBuilder<TSubEntry, TIdentifier>> buildAction)
+            where TSubEntry : RedisEntry
+        {
+            Check.NotNull(property, nameof(property));
+            Check.NotNull(buildAction, nameof(buildAction));
+
+            buildAction(SubEntrySet(property));
+
+            return this;
+        }
+
     }
 
     public class EntrySetBuilder<TEntry, TIdentifier> where TEntry : RedisEntry
     {
-        private readonly EntrySetMetadata _metadata;
+        private readonly EntryMetadata _metadata;
 
-        public EntrySetBuilder(EntrySetMetadata metadata)
+        public EntrySetBuilder(EntryMetadata metadata)
         {
             Check.NotNull(metadata, nameof(metadata));
 
@@ -199,7 +228,13 @@ namespace Hyperspace.Redis.Metadata.Builders
             return this;
         }
 
-        public EntrySetItemBuilder<TEntry, TIdentifier> EntrySetItem()
+        public EntrySetBuilder<TEntry, TIdentifier> Identifier([NotNull]Expression<Func<TEntry, TIdentifier>> property)
+        {
+            return this;
+        }
+
+
+        public EntryBuilder<TEntry> EntryItem()
         {
             var metadata = new EntryMetadata
             {
@@ -209,60 +244,15 @@ namespace Hyperspace.Redis.Metadata.Builders
                 ClrType = typeof(TEntry),
             };
             metadata.EntryType = ModelBuilder.GetEntryType(metadata.ClrType);
-            return new EntrySetItemBuilder<TEntry, TIdentifier>(metadata);
+            return new EntryBuilder<TEntry>(metadata);
         }
 
-        public EntrySetBuilder<TEntry, TIdentifier> EntrySetItem([NotNull] Action<EntrySetItemBuilder<TEntry, TIdentifier>> buildAction)
+        public EntrySetBuilder<TEntry, TIdentifier> EntryItem([NotNull] Action<EntryBuilder<TEntry>> buildAction)
         {
             Check.NotNull(buildAction, nameof(buildAction));
 
-            buildAction(EntrySetItem());
+            buildAction(EntryItem());
 
-            return this;
-        }
-
-    }
-
-    public class EntrySetItemBuilder<TEntry, TIdentifier> where TEntry : RedisEntry
-    {
-        private readonly EntryMetadata _metadata;
-
-        public EntrySetItemBuilder(EntryMetadata metadata)
-        {
-            Check.NotNull(metadata, nameof(metadata));
-
-            _metadata = metadata;
-        }
-
-        public EntryBuilder<TSubEntry> SubEntry<TSubEntry>([NotNull]Expression<Func<TEntry, TSubEntry>> property)
-            where TSubEntry : RedisEntry
-        {
-            Check.NotNull(property, nameof(property));
-
-            var metadata = new EntryMetadata
-            {
-                Parent = _metadata,
-                Model = _metadata.Model,
-                Name = ModelBuilder.GetPropertyName(property),
-                ClrType = ModelBuilder.GetPropertyType(property),
-            };
-            metadata.EntryType = ModelBuilder.GetEntryType(metadata.ClrType);
-            return new EntryBuilder<TSubEntry>(metadata);
-        }
-
-        public EntrySetItemBuilder<TEntry, TIdentifier> SubEntry<TSubEntry>([NotNull] Expression<Func<TEntry, TSubEntry>> property, [NotNull] Action<EntryBuilder<TSubEntry>> buildAction)
-            where TSubEntry : RedisEntry
-        {
-            Check.NotNull(property, nameof(property));
-            Check.NotNull(buildAction, nameof(buildAction));
-
-            buildAction(SubEntry(property));
-
-            return this;
-        }
-
-        public EntrySetItemBuilder<TEntry, TIdentifier> Identifier([NotNull]Expression<Func<TEntry, TIdentifier>> property)
-        {
             return this;
         }
 

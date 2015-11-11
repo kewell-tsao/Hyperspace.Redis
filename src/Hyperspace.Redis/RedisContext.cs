@@ -13,8 +13,8 @@ namespace Hyperspace.Redis
 {
     public class RedisContext : IServiceProvider
     {
-        private static readonly ConcurrentDictionary<Type, Type> OptionsTypes = new ConcurrentDictionary<Type, Type>();
         private RedisDatabase _database;
+        private static readonly ConcurrentDictionary<Type, Type> OptionsTypes = new ConcurrentDictionary<Type, Type>();
 
         protected RedisContext()
         {
@@ -66,18 +66,40 @@ namespace Hyperspace.Redis
             _database = (RedisDatabase)connectionProvider.ConnectAndSelect(options);
         }
 
+        internal TEntry GetSubEntry<TEntry>(RedisEntry parent, string name) where TEntry : RedisEntry
+        {
+            Check.NotNull(parent, nameof(parent));
+            Check.NotEmpty(name, nameof(name));
+
+            throw new NotImplementedException();
+        }
+
+        internal TEntry GetSubEntry<TEntry, TIdentifier>(RedisEntry parent, TIdentifier identifier) where TEntry : RedisEntry
+        {
+            Check.NotNull(parent, nameof(parent));
+            Check.NotNull(identifier, nameof(identifier));
+
+            throw new NotImplementedException();
+        }
+
         protected TEntry GetSubEntry<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
         {
+            Check.NotEmpty(name, nameof(name));
+
             throw new NotImplementedException();
         }
 
         protected RedisEntrySet<TEntry> GetSubEntrySet<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
         {
+            Check.NotEmpty(name, nameof(name));
+
             throw new NotImplementedException();
         }
 
         protected RedisEntrySet<TEntry, TIdentifier> GetSubEntrySet<TEntry, TIdentifier>([CallerMemberName] string name = null) where TEntry : RedisEntry
         {
+            Check.NotEmpty(name, nameof(name));
+
             throw new NotImplementedException();
         }
 

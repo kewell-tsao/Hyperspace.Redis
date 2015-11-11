@@ -27,8 +27,6 @@ namespace Hyperspace.Redis.Tests
         }
     }
 
-
-
     public class ForumContext : RedisContext
     {
         public RedisText Announcement => GetSubEntry<RedisText>();
@@ -38,53 +36,53 @@ namespace Hyperspace.Redis.Tests
 
         protected internal virtual void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var builder = (ModelBuilder<ForumContext>)modelBuilder;
+            var builder = modelBuilder.As<ForumContext>();
             builder.Entry(f => f.Announcement).ShortName("ann");
 
-            builder.EntrySet(f => f.Discussions, dsb =>
+            builder.EntrySet(f => f.Discussions, disb =>
             {
-                dsb.ShortName("dis");
-                dsb.EntrySetItem(db =>
-                {
-                    db.Identifier(d => d.ID);
-
-                    db.SubEntry(d => d.Title);
-                    db.SubEntry(d => d.Author);
-                    db.SubEntry(d => d.AuthorID);
-                    db.SubEntry(d => d.CountViews);
-                    db.SubEntry(d => d.CountFollows);
-                    db.SubEntry(d => d.CountComments);
-                });
+                disb.ShortName("dis")
+                    .Identifier(d => d.ID)
+                    .EntryItem(db =>
+                    {
+                        db.SubEntry(d => d.Title);
+                        db.SubEntry(d => d.Author);
+                        db.SubEntry(d => d.AuthorID);
+                        db.SubEntry(d => d.CountViews);
+                        db.SubEntry(d => d.CountFollows);
+                        db.SubEntry(d => d.CountComments);
+                    });
             });
-
 
             builder.EntrySet(f => f.Comments, dsb =>
             {
                 dsb.ShortName("dis");
-                dsb.EntrySetItem(db =>
+                dsb.EntryItem(db =>
                 {
                 });
             });
+
         }
 
     }
 
-    public class ForumDiscussion : RedisSortedSet<Guid>
+    public class ForumDiscussion : RedisHash
     {
         public ForumDiscussion(RedisContext context, RedisKey key) : base(context, key)
         {
         }
 
-        public Guid ID { get; set; }
+        public Guid ID => GetIdentifier<Guid>();
 
-        public RedisText Title => GetSubEntry<RedisText>(this);
-        public RedisText Author => GetSubEntry<RedisText>(this);
-        public RedisGuid AuthorID => GetSubEntry<RedisGuid>(this);
+        public RedisText Title => GetSubEntry<RedisText>();
+        public RedisText Author => GetSubEntry<RedisText>();
+        public RedisGuid AuthorID => GetSubEntry<RedisGuid>();
 
-        public RedisNumber CountViews => GetSubEntry<RedisNumber>(this);
-        public RedisNumber CountFollows => GetSubEntry<RedisNumber>(this);
-        public RedisNumber CountComments => GetSubEntry<RedisNumber>(this);
+        public RedisNumber CountViews => GetSubEntry<RedisNumber>();
+        public RedisNumber CountFollows => GetSubEntry<RedisNumber>();
+        public RedisNumber CountComments => GetSubEntry<RedisNumber>();
 
+        public RedisList<Guid> Comments => GetSubEntry<RedisList<Guid>>();
     }
 
     public class ForumComment : RedisHash
@@ -92,5 +90,11 @@ namespace Hyperspace.Redis.Tests
         public ForumComment(RedisContext context, RedisKey key) : base(context, key)
         {
         }
+
+        public Guid ID => GetIdentifier<Guid>();
+
+        public RedisText Author => GetSubEntry<RedisText>();
+        public RedisGuid AuthorID => GetSubEntry<RedisGuid>();
+
     }
 }

@@ -1,16 +1,17 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using StackExchange.Redis;
+using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
-using StackExchange.Redis;
 
 namespace Hyperspace.Redis
 {
-    public abstract class RedisEntry
+    public abstract class RedisEntry : IEquatable<RedisEntry>
     {
         protected internal RedisEntry([NotNull] RedisEntry parent, RedisKey key, RedisEntryType entryType)
         {
             Check.NotNull(parent, nameof(parent));
+            Check.NotNull(parent.Context, nameof(parent), nameof(parent.Context));
 
             Key = key;
             Parent = parent;
@@ -27,6 +28,8 @@ namespace Hyperspace.Redis
             Context = context;
             EntryType = entryType;
         }
+
+        #region Properties
 
         /// <summary>
         /// Redis条目的键
@@ -48,10 +51,23 @@ namespace Hyperspace.Redis
         /// </summary>
         internal RedisEntryType EntryType { get; }
 
-        protected TEntry GetSubEntry<TEntry>(RedisEntry parent, [CallerMemberName] string name = null) where TEntry : RedisEntry
+        #endregion
+
+        #region Identifier
+
+        private object _identifier;
+
+        protected internal TIdentifier GetIdentifier<TIdentifier>()
         {
-            throw new NotImplementedException();
+            return (TIdentifier)_identifier;
         }
+
+        internal void SetIdentifier<TIdentifier>(TIdentifier identifier)
+        {
+            _identifier = identifier;
+        }
+
+        #endregion
 
         #region Delete
 
@@ -133,6 +149,61 @@ namespace Hyperspace.Redis
 
         #endregion
 
-    }
+        #region Equals & GetHashCode & ToString
 
+        public bool Equals(RedisEntry other)
+        {
+            return other != null && other.Key == Key;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as RedisEntry);
+        }
+
+        public override int GetHashCode()
+        {
+            return Key.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return Key.ToString();
+        }
+
+        #endregion
+
+        #region Operators
+
+        public static explicit operator RedisKey(RedisEntry entry)
+        {
+            return entry?.Key ?? default(RedisKey);
+        }
+
+        public static bool operator ==(RedisEntry x, RedisEntry y)
+        {
+            if (ReferenceEquals(x, y))
+                return true;
+            if (ReferenceEquals(x, null) || ReferenceEquals(y, null))
+                return false;
+            return x.Key == y.Key;
+        }
+
+        public static bool operator !=(RedisEntry x, RedisEntry y)
+        {
+            return !(x == y);
+        }
+
+        #endregion
+
+        #region Protected Methods
+
+        protected TEntry GetSubEntry<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
+        {
+            return Context.GetSubEntry<TEntry>(this, name);
+        }
+
+        #endregion
+
+    }
 }
