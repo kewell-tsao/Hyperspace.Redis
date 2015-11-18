@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace Hyperspace.Redis.Metadata.Builders
 {
-    public class ModelBuilder
+    public abstract class ModelBuilder
     {
         internal static Type GetPropertyType<T, TEntry>(Expression<Func<T, TEntry>> propertyExpression)
             where TEntry : RedisEntry
@@ -60,6 +60,8 @@ namespace Hyperspace.Redis.Metadata.Builders
                 throw new ArgumentException("This type defines a number of different RedisEntryType.", nameof(entryType));
             return types.First();
         }
+
+        internal abstract ModelMetadata Complete();
 
         public ModelBuilder<TContext> As<TContext>() where TContext : RedisContext
         {
@@ -134,6 +136,11 @@ namespace Hyperspace.Redis.Metadata.Builders
             return this;
         }
 
+        internal override ModelMetadata Complete()
+        {
+            return _metadata;
+        }
+
     }
 
     public class EntryBuilder<TEntry> where TEntry : RedisEntry
@@ -147,9 +154,13 @@ namespace Hyperspace.Redis.Metadata.Builders
             _metadata = metadata;
         }
 
-        public void ShortName(string shortName)
+        public EntryBuilder<TEntry> MapTo([NotNull] string token)
         {
-            _metadata.ShortName = shortName;
+            Check.NotEmpty(token, nameof(token));
+
+            _metadata.Token = token;
+
+            return this;
         }
 
         public EntryBuilder<TSubEntry> SubEntry<TSubEntry>([NotNull] Expression<Func<TEntry, TSubEntry>> property)
@@ -217,8 +228,11 @@ namespace Hyperspace.Redis.Metadata.Builders
             _metadata = metadata;
         }
 
-        public EntrySetBuilder<TEntry, TIdentifier> ShortName(string shortName)
+        public EntrySetBuilder<TEntry, TIdentifier> MapTo([NotNull] string token)
         {
+            Check.NotEmpty(token, nameof(token));
+
+            _metadata.Token = token;
             return this;
         }
 

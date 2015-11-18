@@ -35,14 +35,14 @@ namespace Hyperspace.Redis.Tests
         public RedisEntrySet<ForumDiscussion, Guid> Discussions => GetEntry<ForumDiscussion, Guid>();
         public RedisEntrySet<ForumDiscussion, Guid> Comments => GetEntry<ForumDiscussion, Guid>();
 
-        protected internal virtual void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             var builder = modelBuilder.As<ForumContext>();
-            builder.Entry(f => f.Announcement).ShortName("ann");
+            builder.Entry(f => f.Announcement).MapTo("annt");
 
             builder.EntrySet(f => f.Discussions, disb =>
             {
-                disb.ShortName("dis")
+                disb.MapTo("dscs")
                     .Identifier(d => d.ID)
                     .EntryItem(db =>
                     {
@@ -57,7 +57,7 @@ namespace Hyperspace.Redis.Tests
 
             builder.EntrySet(f => f.Comments, dsb =>
             {
-                dsb.ShortName("dis");
+                dsb.MapTo("cmts");
                 dsb.EntryItem(db =>
                 {
                 });

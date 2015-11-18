@@ -15,13 +15,18 @@ namespace Hyperspace.Redis.Metadata
 
     public class ModelMetadata : MetadataElement
     {
+        public ModelMetadata()
+        {
+            Activator = new RedisEntryActivator(this);
+        }
+
         public string Name { get; set; }
         public string Prefix { get; set; }
         public Type ClrType { get; set; }
 
         public ICollection<RedisEntryMetadata> Children { get; } = new List<RedisEntryMetadata>();
 
-        internal RedisEntryActivator Activator { get; set; }
+        internal RedisEntryActivator Activator { get; } 
     }
 
     public class RedisEntryMetadata : MetadataElement
@@ -44,7 +49,7 @@ namespace Hyperspace.Redis.Metadata
         public ModelMetadata Model { get; set; }
 
         public string Name { get; set; }
-        public string ShortName { get; set; }
+        public string Token { get; set; }
         public RedisEntryType EntryType { get; set; }
         public Type ClrType { get; set; }
         public Type IdentifierClrType { get; set; }
