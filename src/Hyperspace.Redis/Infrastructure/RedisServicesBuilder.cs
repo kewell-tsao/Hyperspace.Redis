@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Hyperspace.Redis;
 using Hyperspace.Redis.Internal;
 using JetBrains.Annotations;
-using Microsoft.Framework.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Hyperspace.Redis.Infrastructure
 {

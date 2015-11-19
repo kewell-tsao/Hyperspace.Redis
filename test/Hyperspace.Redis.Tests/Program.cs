@@ -5,14 +5,14 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Hyperspace.Redis.Metadata;
 using Hyperspace.Redis.Metadata.Builders;
-using Microsoft.Framework.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 
 namespace Hyperspace.Redis.Tests
 {
     public class Program
     {
-        public void Main(string[] args)
+        public static void Main(string[] args)
         {
             var services = (IServiceCollection)new object();
 

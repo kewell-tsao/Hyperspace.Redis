@@ -6,6 +6,10 @@
   "projectUrl": "",
   "licenseUrl": "",
 
+  "compilationOptions": {
+    "emitEntryPoint": true
+  },
+
   "dependencies": {
     "redis-64": "2.8.2101"
   },

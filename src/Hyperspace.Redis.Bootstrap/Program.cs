@@ -7,7 +7,7 @@ namespace Hyperspace.Redis.Bootstrap
 {
     public class Program
     {
-        public int Main(string[] args)
+        public static int Main(string[] args)
         {
             var redis64Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".dnx\packages\redis-64\");
             if (!Directory.Exists(redis64Path))

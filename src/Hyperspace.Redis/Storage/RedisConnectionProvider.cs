@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using StackExchange.Redis;
 using Hyperspace.Redis.Infrastructure;
 using Hyperspace.Redis.Internal;
-using Microsoft.Framework.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Hyperspace.Redis.Storage
 {

@@ -3,7 +3,7 @@ using Hyperspace.Redis.Internal;
 using Hyperspace.Redis.Properties;
 using Hyperspace.Redis.Storage;
 using JetBrains.Annotations;
-using Microsoft.Framework.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using System;
 using System.Collections.Concurrent;

@@ -1,6 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
-using Microsoft.Framework.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Hyperspace.Redis.Internal
 {

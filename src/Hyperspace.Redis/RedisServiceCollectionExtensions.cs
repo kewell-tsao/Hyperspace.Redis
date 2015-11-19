@@ -6,10 +6,10 @@ using Hyperspace.Redis.Infrastructure;
 using Hyperspace.Redis.Internal;
 using Hyperspace.Redis.Storage;
 using JetBrains.Annotations;
-using Microsoft.Framework.DependencyInjection.Extensions;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.Framework.DependencyInjection
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class RedisServiceCollectionExtensions
     {
