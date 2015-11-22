@@ -14,6 +14,7 @@ using Hyperspace.Redis.Metadata.Builders;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace Hyperspace.Redis
 {
@@ -60,8 +61,14 @@ namespace Hyperspace.Redis
 
     }
 
-    public class RedisContext : IServiceProvider
+    public class RedisContext : IDisposable, IInfrastructure<IServiceProvider>
     {
+        private bool _disposed;
+        private bool _initializing;
+        private ILogger _logger;
+        private IServiceScope _serviceScope;
+        //private LazyRef<IDbContextServices> _contextServices;
+
         private ModelMetadata _metadata;
         private RedisDatabase _database;
         private Dictionary<string, RedisEntry> _entryCache;
@@ -97,6 +104,22 @@ namespace Hyperspace.Redis
         }
 
         public IDatabase Database => _database.Database;
+
+        private IServiceProvider ServiceProvider
+        {
+            get
+            {
+                if (_disposed)
+                    throw new ObjectDisposedException(GetType().Name);
+                return null;
+                //return _contextServices.Value.ServiceProvider;
+            }
+        }
+
+        internal T GetRequiredService<T>()
+        {
+            return ServiceProvider.GetRequiredService<T>();
+        }
 
         private ModelMetadata GetMetadata()
         {
@@ -180,14 +203,32 @@ namespace Hyperspace.Redis
 
         }
 
-        #region IServiceProvider
-
-        object IServiceProvider.GetService(Type serviceType)
+        public RedisBatch<T> BeginBatch<T>() where T : RedisContext
         {
-            return serviceType;
+            return new RedisBatch<T>((T)this);
+        }
+
+        public RedisTransaction<T> BeginTransaction<T>() where T : RedisContext
+        {
+            return new RedisTransaction<T>((T)this);
+        }
+
+        #region IDisposable
+
+        public virtual void Dispose()
+        {
+            _disposed = true;
+            _serviceScope?.Dispose();
         }
 
         #endregion
 
+        #region IInfrastructure
+
+        IServiceProvider IInfrastructure<IServiceProvider>.Instance => ServiceProvider;
+
+        #endregion
+
     }
+
 }

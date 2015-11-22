@@ -12,21 +12,67 @@ namespace Hyperspace.Redis.Tests
 {
     public class Program
     {
+        public static async Task DoTest()
+        {
+            var connection = ConnectionMultiplexer.Connect("localhost");
+            var database = connection.GetDatabase(0);
+
+            var b = database.CreateBatch();
+            var t1 = b.ListLeftPushAsync("AA", "AAV");
+            var t2 = b.ListLeftPushAsync("AA", "AAV");
+            var t3 = b.ListLeftPushAsync("AA", "AAV");
+            b.Execute();
+
+            var r1 = t1.Result;
+            var r2 = t2.Result;
+            var r3 = t3.Result;
+
+            //var transaction = database.CreateTransaction();
+            //var messageEnqueueTask = transaction.ListLeftPushAsync("AA", "AAV");
+            //var messagePublishTask = transaction.PublishAsync(new RedisChannel("AA", RedisChannel.PatternMode.Literal), "AAM");
+            //var committed = await transaction.ExecuteAsync();
+
+            //if (committed)
+            //{
+            //    var queueLength = await messageEnqueueTask;
+            //    var subscriberCount = await messagePublishTask;
+            //}
+        }
+
         public static void Main(string[] args)
         {
-            var services = (IServiceCollection)new object();
+            DoTest().Wait();
+            //return;
 
+            var services = new ServiceCollection();
             services.AddRedis()
                     .AddRedisContext<ForumContext>(options => options.UseConnection("localhost")
                                                                      .UseDatabase(0));
+            var provider = services.BuildServiceProvider();
+
             //pfx:Discussions:123:CountViews
             //pfx:Discussions:123:CountComments
 
-            var context = new ForumContext();
+            using (var context = provider.GetRequiredService<ForumContext>())
+            {
+                context.BeginTransaction()
+                    .When(c => c.HashExists("", ""))
+                    .Done(c =>
+                    {
+                        var currentID = c.Announcement.SetAsync("");
+                        return new[] { currentID }.Select(t => t.Result);
+                    })
+                    .Execute(r =>
+                   {
+                       var aa = r;
+                   });
+            }
+
             //context.Discussions["123"].CountViews.Increment();
             //var id = context.Discussions["123"].AuthorID.Get();
         }
     }
+
 
     public class ForumContext : RedisContext
     {
