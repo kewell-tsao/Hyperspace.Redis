@@ -103,7 +103,10 @@ namespace Hyperspace.Redis
             Initialize(serviceProvider, options);
         }
 
-        public IDatabase Database => _database.Database;
+        internal RedisDatabase Database
+        {
+            get { return _database; }
+        }
 
         private IServiceProvider ServiceProvider
         {

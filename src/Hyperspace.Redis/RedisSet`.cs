@@ -1,5 +1,4 @@
 ﻿using Hyperspace.Redis.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -30,22 +29,22 @@ namespace Hyperspace.Redis
 
         public bool Add(T value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetAdd(Key, Converter.Value.Serialize(value), flags);
+            return RedisSync.SetAdd(Key, Converter.Value.Serialize(value), flags);
         }
 
         public long Add(IEnumerable<T> values, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetAdd(Key, values.Select(Converter.Value.Serialize).ToArray(), flags);
+            return RedisSync.SetAdd(Key, values.Select(Converter.Value.Serialize).ToArray(), flags);
         }
 
         public Task<bool> AddAsync(T value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetAddAsync(Key, Converter.Value.Serialize(value), flags);
+            return RedisAsync.SetAddAsync(Key, Converter.Value.Serialize(value), flags);
         }
 
         public Task<long> AddAsync(IEnumerable<T> values, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetAddAsync(Key, values.Select(Converter.Value.Serialize).ToArray(), flags);
+            return RedisAsync.SetAddAsync(Key, values.Select(Converter.Value.Serialize).ToArray(), flags);
         }
 
         #endregion
@@ -54,22 +53,22 @@ namespace Hyperspace.Redis
 
         public bool Remove(T value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetRemove(Key, Converter.Value.Serialize(value), flags);
+            return RedisSync.SetRemove(Key, Converter.Value.Serialize(value), flags);
         }
 
         public Task<bool> RemoveAsync(T value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetRemoveAsync(Key, Converter.Value.Serialize(value), flags);
+            return RedisAsync.SetRemoveAsync(Key, Converter.Value.Serialize(value), flags);
         }
 
         public long Remove(IEnumerable<T> values, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetRemove(Key, values.Select(Converter.Value.Serialize).ToArray(), flags);
+            return RedisSync.SetRemove(Key, values.Select(Converter.Value.Serialize).ToArray(), flags);
         }
 
         public Task<long> RemoveAsync(IEnumerable<T> values, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetRemoveAsync(Key, values.Select(Converter.Value.Serialize).ToArray(), flags);
+            return RedisAsync.SetRemoveAsync(Key, values.Select(Converter.Value.Serialize).ToArray(), flags);
         }
 
         #endregion
@@ -78,42 +77,42 @@ namespace Hyperspace.Redis
 
         public IEnumerable<T> Combine(SetOperation operation, RedisKey[] keys, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetCombine(operation, keys, flags).Select(Converter.Value.Deserialize<T>);
+            return RedisSync.SetCombine(operation, keys, flags).Select(Converter.Value.Deserialize<T>);
         }
 
         public async Task<IEnumerable<T>> CombineAsync(SetOperation operation, RedisKey[] keys, CommandFlags flags = CommandFlags.None)
         {
-            return (await Context.Database.SetCombineAsync(operation, keys, flags)).Select(Converter.Value.Deserialize<T>);
+            return (await RedisAsync.SetCombineAsync(operation, keys, flags)).Select(Converter.Value.Deserialize<T>);
         }
 
         public IEnumerable<T> Combine(SetOperation operation, RedisKey first, RedisKey second, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetCombine(operation, first, second, flags).Select(Converter.Value.Deserialize<T>);
+            return RedisSync.SetCombine(operation, first, second, flags).Select(Converter.Value.Deserialize<T>);
         }
 
         public async Task<IEnumerable<T>> CombineAsync(SetOperation operation, RedisKey first, RedisKey second, CommandFlags flags = CommandFlags.None)
         {
-            return (await Context.Database.SetCombineAsync(operation, first, second, flags)).Select(Converter.Value.Deserialize<T>);
+            return (await RedisAsync.SetCombineAsync(operation, first, second, flags)).Select(Converter.Value.Deserialize<T>);
         }
 
         public long CombineAndStore(SetOperation operation, RedisKey destination, RedisKey[] keys, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetCombineAndStore(operation, destination, keys, flags);
+            return RedisSync.SetCombineAndStore(operation, destination, keys, flags);
         }
 
         public Task<long> CombineAndStoreAsync(SetOperation operation, RedisKey destination, RedisKey[] keys, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetCombineAndStoreAsync(operation, destination, keys, flags);
+            return RedisAsync.SetCombineAndStoreAsync(operation, destination, keys, flags);
         }
 
         public long CombineAndStore(SetOperation operation, RedisKey destination, RedisKey first, RedisKey second, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetCombineAndStore(operation, destination, first, second, flags);
+            return RedisSync.SetCombineAndStore(operation, destination, first, second, flags);
         }
 
         public Task<long> CombineAndStoreAsync(SetOperation operation, RedisKey destination, RedisKey first, RedisKey second, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetCombineAndStoreAsync(operation, destination, first, second, flags);
+            return RedisAsync.SetCombineAndStoreAsync(operation, destination, first, second, flags);
         }
 
         #endregion
@@ -122,12 +121,12 @@ namespace Hyperspace.Redis
 
         public bool Contains(T value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetContains(Key, Converter.Value.Serialize(value), flags);
+            return RedisSync.SetContains(Key, Converter.Value.Serialize(value), flags);
         }
 
         public Task<bool> ContainsAsync(T value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetContainsAsync(Key, Converter.Value.Serialize(value), flags);
+            return RedisAsync.SetContainsAsync(Key, Converter.Value.Serialize(value), flags);
         }
 
         #endregion
@@ -136,12 +135,12 @@ namespace Hyperspace.Redis
 
         public long Length(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetLength(Key, flags);
+            return RedisSync.SetLength(Key, flags);
         }
 
         public Task<long> LengthAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetLengthAsync(Key, flags);
+            return RedisAsync.SetLengthAsync(Key, flags);
         }
 
         #endregion
@@ -150,12 +149,12 @@ namespace Hyperspace.Redis
 
         public IEnumerable<T> Members(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetMembers(Key, flags).Select(Converter.Value.Deserialize<T>);
+            return RedisSync.SetMembers(Key, flags).Select(Converter.Value.Deserialize<T>);
         }
 
         public async Task<IEnumerable<T>> MembersAsync(CommandFlags flags = CommandFlags.None)
         {
-            return (await Context.Database.SetMembersAsync(Key, flags)).Select(Converter.Value.Deserialize<T>);
+            return (await RedisAsync.SetMembersAsync(Key, flags)).Select(Converter.Value.Deserialize<T>);
         }
 
         #endregion
@@ -164,22 +163,22 @@ namespace Hyperspace.Redis
 
         public T RandomMember(CommandFlags flags = CommandFlags.None)
         {
-            return Converter.Value.Deserialize<T>(Context.Database.SetRandomMember(Key, flags));
+            return Converter.Value.Deserialize<T>(RedisSync.SetRandomMember(Key, flags));
         }
 
         public async Task<T> RandomMemberAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Converter.Value.Deserialize<T>(await Context.Database.SetRandomMemberAsync(Key, flags));
+            return Converter.Value.Deserialize<T>(await RedisAsync.SetRandomMemberAsync(Key, flags));
         }
 
         public IEnumerable<T> RandomMembers(long count, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetRandomMembers(Key, count, flags).Select(Converter.Value.Deserialize<T>);
+            return RedisSync.SetRandomMembers(Key, count, flags).Select(Converter.Value.Deserialize<T>);
         }
 
         public async Task<IEnumerable<T>> RandomMembersAsync(long count, CommandFlags flags = CommandFlags.None)
         {
-            return (await Context.Database.SetRandomMembersAsync(Key, count, flags)).Select(Converter.Value.Deserialize<T>);
+            return (await RedisAsync.SetRandomMembersAsync(Key, count, flags)).Select(Converter.Value.Deserialize<T>);
         }
 
         #endregion
@@ -188,12 +187,12 @@ namespace Hyperspace.Redis
 
         public bool Move(RedisKey destination, T value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetMove(Key, destination, Converter.Value.Serialize(value), flags);
+            return RedisSync.SetMove(Key, destination, Converter.Value.Serialize(value), flags);
         }
 
         public Task<bool> MoveAsync(RedisKey destination, T value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetMoveAsync(Key, destination, Converter.Value.Serialize(value), flags);
+            return RedisAsync.SetMoveAsync(Key, destination, Converter.Value.Serialize(value), flags);
         }
 
         #endregion
@@ -202,12 +201,12 @@ namespace Hyperspace.Redis
 
         public IEnumerable<T> Scan(RedisValue pattern, int pageSize, CommandFlags flags)
         {
-            return Context.Database.SetScan(Key, pattern, pageSize, flags).Select(Converter.Value.Deserialize<T>);
+            return RedisSync.SetScan(Key, pattern, pageSize, flags).Select(Converter.Value.Deserialize<T>);
         }
 
         public IEnumerable<T> Scan(RedisValue pattern = default(RedisValue), int pageSize = 10, long cursor = 0, int pageOffset = 0, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SetScan(Key, pattern, pageSize, cursor, pageOffset, flags).Select(Converter.Value.Deserialize<T>);
+            return RedisSync.SetScan(Key, pattern, pageSize, cursor, pageOffset, flags).Select(Converter.Value.Deserialize<T>);
         }
 
         #endregion
@@ -216,12 +215,12 @@ namespace Hyperspace.Redis
 
         public T Pop(CommandFlags flags = CommandFlags.None)
         {
-            return Converter.Value.Deserialize<T>(Context.Database.SetPop(Key, flags));
+            return Converter.Value.Deserialize<T>(RedisSync.SetPop(Key, flags));
         }
 
         public async Task<T> PopAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Converter.Value.Deserialize<T>(await Context.Database.SetPopAsync(Key, flags));
+            return Converter.Value.Deserialize<T>(await RedisAsync.SetPopAsync(Key, flags));
         }
 
         #endregion
@@ -232,28 +231,28 @@ namespace Hyperspace.Redis
             SortType sortType = SortType.Numeric, RedisValue by = default(RedisValue), RedisValue[] get = null,
             CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.Sort(Key, skip, take, order, sortType, by, get, flags).Select(Converter.Value.Deserialize<T>);
+            return RedisSync.Sort(Key, skip, take, order, sortType, by, get, flags).Select(Converter.Value.Deserialize<T>);
         }
 
         public async Task<IEnumerable<T>> SortAsync(long skip = 0, long take = -1, Order order = Order.Ascending,
             SortType sortType = SortType.Numeric, RedisValue by = default(RedisValue), RedisValue[] get = null,
             CommandFlags flags = CommandFlags.None)
         {
-            return (await Context.Database.SortAsync(Key, skip, take, order, sortType, by, get, flags)).Select(Converter.Value.Deserialize<T>);
+            return (await RedisAsync.SortAsync(Key, skip, take, order, sortType, by, get, flags)).Select(Converter.Value.Deserialize<T>);
         }
 
         public long SortAndStore(RedisKey destination, long skip = 0, long take = -1,
             Order order = Order.Ascending, SortType sortType = SortType.Numeric, RedisValue by = default(RedisValue),
             RedisValue[] get = null, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SortAndStore(destination, Key, skip, take, order, sortType, by, get, flags);
+            return RedisSync.SortAndStore(destination, Key, skip, take, order, sortType, by, get, flags);
         }
 
         public Task<long> SortAndStoreAsync(RedisKey destination, long skip = 0, long take = -1,
             Order order = Order.Ascending, SortType sortType = SortType.Numeric, RedisValue by = default(RedisValue),
             RedisValue[] get = null, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.SortAndStoreAsync(destination, Key, skip, take, order, sortType, by, get, flags);
+            return RedisAsync.SortAndStoreAsync(destination, Key, skip, take, order, sortType, by, get, flags);
         }
 
         #endregion

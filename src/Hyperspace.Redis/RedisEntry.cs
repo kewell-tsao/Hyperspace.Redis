@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -25,22 +24,22 @@ namespace Hyperspace.Redis
             Metadata = metadata;
         }
 
-        #region Properties
+        #region Internal Properties
 
         /// <summary>
         /// Redis条目的键
         /// </summary>
-        internal RedisKey Key { get; private set; }
+        internal RedisKey Key { get; }
 
         /// <summary>
         /// Redis条目的父条目
         /// </summary>
-        internal RedisEntry Parent { get; private set; }
+        internal RedisEntry Parent { get;}
 
         /// <summary>
         /// Redis条目的上下文
         /// </summary>
-        internal RedisContext Context { get; private set; }
+        internal RedisContext Context { get; }
 
         /// <summary>
         /// Redis条目的类型
@@ -50,23 +49,7 @@ namespace Hyperspace.Redis
         /// <summary>
         /// Redis条目的元数据
         /// </summary>
-        internal RedisEntryMetadata Metadata { get; private set; }
-
-        #endregion
-
-        #region Identifier
-
-        private object _identifier;
-
-        protected internal TIdentifier GetIdentifier<TIdentifier>()
-        {
-            return (TIdentifier)_identifier;
-        }
-
-        internal void SetIdentifier<TIdentifier>(TIdentifier identifier)
-        {
-            _identifier = identifier;
-        }
+        internal RedisEntryMetadata Metadata { get; }
 
         #endregion
 
@@ -74,12 +57,12 @@ namespace Hyperspace.Redis
 
         public bool Delete(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyDelete(Key, flags);
+            return RedisSync.KeyDelete(Key, flags);
         }
 
         public Task<bool> DeleteAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyDeleteAsync(Key, flags);
+            return RedisAsync.KeyDeleteAsync(Key, flags);
         }
 
         #endregion
@@ -88,12 +71,12 @@ namespace Hyperspace.Redis
 
         public bool Exists(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyExists(Key, flags);
+            return RedisSync.KeyExists(Key, flags);
         }
 
         public Task<bool> ExistsAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyExistsAsync(Key, flags);
+            return RedisAsync.KeyExistsAsync(Key, flags);
         }
 
         #endregion
@@ -102,22 +85,22 @@ namespace Hyperspace.Redis
 
         public bool Expire(DateTime? expiry, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyExpire(Key, expiry, flags);
+            return RedisSync.KeyExpire(Key, expiry, flags);
         }
 
         public bool Expire(TimeSpan? expiry, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyExpire(Key, expiry, flags);
+            return RedisSync.KeyExpire(Key, expiry, flags);
         }
 
         public Task<bool> ExpireAsync(DateTime? expiry, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyExpireAsync(Key, expiry, flags);
+            return RedisAsync.KeyExpireAsync(Key, expiry, flags);
         }
 
         public Task<bool> ExpireAsync(TimeSpan? expiry, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyExpireAsync(Key, expiry, flags);
+            return RedisAsync.KeyExpireAsync(Key, expiry, flags);
         }
 
         #endregion
@@ -126,12 +109,12 @@ namespace Hyperspace.Redis
 
         public bool Persist(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyPersist(Key, flags);
+            return RedisSync.KeyPersist(Key, flags);
         }
 
         public Task<bool> PersistAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyPersistAsync(Key, flags);
+            return RedisAsync.KeyPersistAsync(Key, flags);
         }
 
         #endregion
@@ -140,12 +123,12 @@ namespace Hyperspace.Redis
 
         public TimeSpan? TimeToLive(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyTimeToLive(Key, flags);
+            return RedisSync.KeyTimeToLive(Key, flags);
         }
 
         public Task<TimeSpan?> TimeToLiveAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.KeyTimeToLiveAsync(Key, flags);
+            return RedisAsync.KeyTimeToLiveAsync(Key, flags);
         }
 
         #endregion
@@ -222,6 +205,50 @@ namespace Hyperspace.Redis
                     _cache = new Dictionary<string, RedisEntry>(Metadata.Children.Count);
                 _cache.Add(name, result);
                 return result;
+            }
+        }
+
+        #endregion
+
+        #region Identifier
+
+        private object _identifier;
+
+        protected internal TIdentifier GetIdentifier<TIdentifier>()
+        {
+            return (TIdentifier)_identifier;
+        }
+
+        internal void SetIdentifier<TIdentifier>(TIdentifier identifier)
+        {
+            _identifier = identifier;
+        }
+
+        #endregion
+
+        #region Redis Sync & Async
+
+        protected IDatabase RedisSync
+        {
+            get
+            {
+                var currentScope = RedisContextScope.Current;
+                if (currentScope == null)
+                    return Context.Database.Database;
+                System.Diagnostics.Debug.Assert(currentScope.Context == Context);
+                throw new InvalidOperationException("");
+            }
+        }
+
+        protected IDatabaseAsync RedisAsync
+        {
+            get
+            {
+                var currentScope = RedisContextScope.Current;
+                if (currentScope == null)
+                    return Context.Database.Database;
+                System.Diagnostics.Debug.Assert(currentScope.Context == Context);
+                return currentScope.AsyncFunc;
             }
         }
 

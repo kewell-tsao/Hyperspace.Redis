@@ -1,5 +1,4 @@
 ﻿using Hyperspace.Redis.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StackExchange.Redis;
@@ -21,12 +20,12 @@ namespace Hyperspace.Redis
 
         public long Append(RedisValue value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringAppend(Key, value, flags);
+            return RedisSync.StringAppend(Key, value, flags);
         }
 
         public Task<long> AppendAsync(RedisValue value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringAppendAsync(Key, value, flags);
+            return RedisAsync.StringAppendAsync(Key, value, flags);
         }
 
         #endregion
@@ -35,32 +34,32 @@ namespace Hyperspace.Redis
 
         public RedisValue Get(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGet(Key, flags);
+            return RedisSync.StringGet(Key, flags);
         }
 
         public Task<RedisValue> GetAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetAsync(Key, flags);
+            return RedisAsync.StringGetAsync(Key, flags);
         }
 
         public bool Set(RedisValue value, TimeSpan? expiry = default(TimeSpan?), When when = When.Always, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringSet(Key, value, expiry, when, flags);
+            return RedisSync.StringSet(Key, value, expiry, when, flags);
         }
 
         public Task<bool> SetAsync(RedisValue value, TimeSpan? expiry = default(TimeSpan?), When when = When.Always, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringSetAsync(Key, value, expiry, when, flags);
+            return RedisAsync.StringSetAsync(Key, value, expiry, when, flags);
         }
 
         public RedisValue GetSet(RedisValue value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetSet(Key, value, flags);
+            return RedisSync.StringGetSet(Key, value, flags);
         }
 
         public Task<RedisValue> GetSetAsync(RedisValue value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetSetAsync(Key, value, flags);
+            return RedisAsync.StringGetSetAsync(Key, value, flags);
         }
 
         #endregion
@@ -69,22 +68,22 @@ namespace Hyperspace.Redis
 
         public bool GetBit(long offset, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetBit(Key, offset, flags);
+            return RedisSync.StringGetBit(Key, offset, flags);
         }
 
         public Task<bool> GetBitAsync(long offset, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetBitAsync(Key, offset, flags);
+            return RedisAsync.StringGetBitAsync(Key, offset, flags);
         }
 
         public bool SetBit(long offset, bool bit, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringSetBit(Key, offset, bit, flags);
+            return RedisSync.StringSetBit(Key, offset, bit, flags);
         }
 
         public Task<bool> SetBitAsync(long offset, bool bit, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringSetBitAsync(Key, offset, bit, flags);
+            return RedisAsync.StringSetBitAsync(Key, offset, bit, flags);
         }
 
         #endregion
@@ -93,22 +92,22 @@ namespace Hyperspace.Redis
 
         public RedisValue GetRange(long start, long end, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetRange(Key, start, end, flags);
+            return RedisSync.StringGetRange(Key, start, end, flags);
         }
 
         public Task<RedisValue> GetRangeAsync(long start, long end, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetRangeAsync(Key, start, end, flags);
+            return RedisAsync.StringGetRangeAsync(Key, start, end, flags);
         }
 
         public RedisValue SetRange(long offset, RedisValue value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringSetRange(Key, offset, value, flags);
+            return RedisSync.StringSetRange(Key, offset, value, flags);
         }
 
         public Task<RedisValue> SetRangeAsync(long offset, RedisValue value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringSetRangeAsync(Key, offset, value, flags);
+            return RedisAsync.StringSetRangeAsync(Key, offset, value, flags);
         }
 
         #endregion
@@ -117,12 +116,12 @@ namespace Hyperspace.Redis
 
         public long Length(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringLength(Key, flags);
+            return RedisSync.StringLength(Key, flags);
         }
 
         public Task<long> LengthAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringLengthAsync(Key, flags);
+            return RedisAsync.StringLengthAsync(Key, flags);
         }
 
         #endregion
@@ -131,12 +130,12 @@ namespace Hyperspace.Redis
 
         public long BitCount(long start = 0, long end = -1, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringBitCount(Key, start, end, flags);
+            return RedisSync.StringBitCount(Key, start, end, flags);
         }
 
         public Task<long> BitCountAsync(long start = 0, long end = -1, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringBitCountAsync(Key, start, end, flags);
+            return RedisAsync.StringBitCountAsync(Key, start, end, flags);
         }
 
         #endregion
@@ -145,32 +144,32 @@ namespace Hyperspace.Redis
 
         public long BitOperation(Bitwise operation, RedisKey[] keys, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringBitOperation(operation, Key, keys, flags);
+            return RedisSync.StringBitOperation(operation, Key, keys, flags);
         }
 
         public Task<long> BitOperationAsync(Bitwise operation, RedisKey[] keys, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringBitOperationAsync(operation, Key, keys, flags);
+            return RedisAsync.StringBitOperationAsync(operation, Key, keys, flags);
         }
 
         public long BitOperation(Bitwise operation, RedisKey first, RedisKey second = default(RedisKey), CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringBitOperation(operation, Key, first, second, flags);
+            return RedisSync.StringBitOperation(operation, Key, first, second, flags);
         }
 
         public Task<long> BitOperationAsync(Bitwise operation, RedisKey first, RedisKey second = default(RedisKey), CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringBitOperationAsync(operation, Key, first, second, flags);
+            return RedisAsync.StringBitOperationAsync(operation, Key, first, second, flags);
         }
 
         public long BitPosition(bool bit, long start = 0, long end = -1, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringBitPosition(Key, bit, start, end, flags);
+            return RedisSync.StringBitPosition(Key, bit, start, end, flags);
         }
 
         public Task<long> BitPositionAsync(bool bit, long start = 0, long end = -1, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringBitPositionAsync(Key, bit, start, end, flags);
+            return RedisAsync.StringBitPositionAsync(Key, bit, start, end, flags);
         }
 
         #endregion
@@ -179,42 +178,42 @@ namespace Hyperspace.Redis
 
         public double Increment(double value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringIncrement(Key, value, flags);
+            return RedisSync.StringIncrement(Key, value, flags);
         }
 
         public Task<double> IncrementAsync(double value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringIncrementAsync(Key, value, flags);
+            return RedisAsync.StringIncrementAsync(Key, value, flags);
         }
 
         public long Increment(long value = 1, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringIncrement(Key, value, flags);
+            return RedisSync.StringIncrement(Key, value, flags);
         }
 
         public Task<long> IncrementAsync(long value = 1, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringIncrementAsync(Key, value, flags);
+            return RedisAsync.StringIncrementAsync(Key, value, flags);
         }
 
         public double Decrement(double value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringDecrement(Key, value, flags);
+            return RedisSync.StringDecrement(Key, value, flags);
         }
 
         public Task<double> DecrementAsync(double value, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringDecrementAsync(Key, value, flags);
+            return RedisAsync.StringDecrementAsync(Key, value, flags);
         }
 
         public long Decrement(long value = 1, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringDecrement(Key, value, flags);
+            return RedisSync.StringDecrement(Key, value, flags);
         }
 
         public Task<long> DecrementAsync(long value = 1, CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringDecrementAsync(Key, value, flags);
+            return RedisAsync.StringDecrementAsync(Key, value, flags);
         }
 
         #endregion
@@ -223,12 +222,12 @@ namespace Hyperspace.Redis
 
         public RedisValueWithExpiry GetWithExpiry(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetWithExpiry(Key, flags);
+            return RedisSync.StringGetWithExpiry(Key, flags);
         }
 
         public Task<RedisValueWithExpiry> GetWithExpiryAsync(CommandFlags flags = CommandFlags.None)
         {
-            return Context.Database.StringGetWithExpiryAsync(Key, flags);
+            return RedisAsync.StringGetWithExpiryAsync(Key, flags);
         }
 
         #endregion
@@ -366,33 +365,33 @@ namespace Hyperspace.Redis
 
         public long Increment(uint amount = 1)
         {
-            return Context.Database.StringIncrement(Key, amount);
+            return RedisSync.StringIncrement(Key, amount);
         }
 
         public Task<long> IncrementAsync(uint amount = 1)
         {
-            return Context.Database.StringIncrementAsync(Key, amount);
+            return RedisAsync.StringIncrementAsync(Key, amount);
         }
 
         public long Decrement(uint amount = 1)
         {
-            return Context.Database.StringDecrement(Key, amount);
+            return RedisSync.StringDecrement(Key, amount);
         }
 
         public Task<long> DecrementAsync(uint amount = 1)
         {
-            return Context.Database.StringDecrementAsync(Key, amount);
+            return RedisAsync.StringDecrementAsync(Key, amount);
         }
 
         public long? Reset(uint count = 0)
         {
-            var oldValue = Context.Database.StringGetSet(Key, count);
+            var oldValue = RedisSync.StringGetSet(Key, count);
             return oldValue.IsInteger ? (long?)oldValue : null;
         }
 
         public Task<long?> ResetAsync(uint count = 0)
         {
-            return Context.Database.StringGetSetAsync(Key, count).ContinueWith(t => t.Result.IsInteger ? (long?)t.Result : null);
+            return RedisAsync.StringGetSetAsync(Key, count).ContinueWith(t => t.Result.IsInteger ? (long?)t.Result : null);
         }
 
         public static long operator +(RedisNumber counter, uint amount)

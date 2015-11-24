@@ -15,7 +15,7 @@ namespace Hyperspace
         {
             if (ReferenceEquals(value, null))
             {
-                NotEmpty(parameterName, "parameterName");
+                NotEmpty(parameterName, nameof(parameterName));
                 throw new ArgumentNullException(parameterName);
             }
             return value;
@@ -26,8 +26,8 @@ namespace Hyperspace
         {
             if (ReferenceEquals(value, null))
             {
-                NotEmpty(parameterName, "parameterName");
-                NotEmpty(propertyName, "propertyName");
+                NotEmpty(parameterName, nameof(parameterName));
+                NotEmpty(propertyName, nameof(propertyName));
                 throw new ArgumentException($"The property '{propertyName}' of the argument '{parameterName}' cannot be null.");
             }
             return value;
@@ -39,7 +39,7 @@ namespace Hyperspace
             NotNull(value, parameterName);
             if (value.Count == 0)
             {
-                NotEmpty(parameterName, "parameterName");
+                NotEmpty(parameterName, nameof(parameterName));
                 throw new ArgumentException($"The collection argument '{parameterName}' must contain at least one element.");
             }
             return value;
@@ -59,7 +59,7 @@ namespace Hyperspace
             }
             if (e != null)
             {
-                NotEmpty(parameterName, "parameterName");
+                NotEmpty(parameterName, nameof(parameterName));
                 throw e;
             }
             return value;
@@ -69,7 +69,7 @@ namespace Hyperspace
         {
             if (!ReferenceEquals(value, null) && value.Length == 0)
             {
-                NotEmpty(parameterName, "parameterName");
+                NotEmpty(parameterName, nameof(parameterName));
                 throw new ArgumentException($"The string argument '{parameterName}' cannot be empty.");
             }
             return value;
@@ -81,7 +81,7 @@ namespace Hyperspace
             NotNull(value, parameterName);
             if (value.Any(e => e == null))
             {
-                NotEmpty(parameterName, "parameterName");
+                NotEmpty(parameterName, nameof(parameterName));
                 throw new ArgumentException(parameterName);
             }
             return value;
@@ -92,7 +92,7 @@ namespace Hyperspace
         {
             if (!Enum.IsDefined(typeof(T), value))
             {
-                NotEmpty(parameterName, "parameterName");
+                NotEmpty(parameterName, nameof(parameterName));
                 throw new ArgumentException($"The value provided for argument '{parameterName}' must be a valid value of enum type '{typeof(T)}'.");
             }
 

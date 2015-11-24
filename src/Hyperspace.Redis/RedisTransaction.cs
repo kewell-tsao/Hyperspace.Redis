@@ -6,40 +6,106 @@ using System.Threading.Tasks;
 
 namespace Hyperspace.Redis
 {
-    public abstract class RedisBatch : IDisposable
+    public abstract class RedisContextScope : IDisposable
     {
-        protected internal RedisBatch(RedisContext context)
+        [ThreadStatic]
+        private static RedisContextScope _current;
+
+        protected internal RedisContextScope([NotNull] RedisContext context)
         {
             Check.NotNull(context, nameof(context));
 
             Context = context;
-            Batch = context.Database.CreateBatch();
-        }
-
-        protected internal RedisBatch(RedisContext context, IBatch batch)
-        {
-            Check.NotNull(context, nameof(context));
-            Check.NotNull(batch, nameof(batch));
-
-            Context = context;
-            Batch = batch;
         }
 
         protected internal RedisContext Context { get; }
+
+        internal static RedisContextScope Current
+        {
+            get { return _current; }
+        }
+
+        internal abstract IDatabaseAsync AsyncFunc { get; }
+
+        protected class ScopeDaemon : IDisposable
+        {
+            private readonly RedisContextScope _scope;
+
+            public ScopeDaemon([NotNull] RedisContextScope scope)
+            {
+                Check.NotNull(scope, nameof(scope));
+                if (_current != null)
+                    throw new InvalidOperationException("");
+                _scope = scope;
+                _current = scope;
+            }
+
+            public void Dispose()
+            {
+                if (_current == null)
+                    throw new InvalidOperationException("");
+                if (_current != _scope)
+                    throw new InvalidOperationException("");
+                _current = null;
+            }
+
+        }
+
+        #region IDisposable
+
+        private bool _disposed;
+
+        ~RedisContextScope()
+        {
+            Dispose(false);
+        }
+
+        void IDisposable.Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+            if (disposing)
+            {
+
+            }
+            _disposed = true;
+        }
+
+        #endregion
+
+    }
+
+    public abstract class RedisBatch : RedisContextScope
+    {
+        protected internal RedisBatch(RedisContext context) : base(context)
+        {
+            Batch = context.Database.Database.CreateBatch();
+        }
+
+        protected internal RedisBatch(RedisContext context, IBatch batch) : base(context)
+        {
+            Check.NotNull(batch, nameof(batch));
+
+            Batch = batch;
+        }
+
         protected internal IBatch Batch { get; }
+
+        internal override IDatabaseAsync AsyncFunc
+        {
+            get { return Batch; }
+        }
 
         public void Execute()
         {
             Batch.Execute();
         }
-
-        #region IDisposable
-
-        void IDisposable.Dispose()
-        {
-        }
-
-        #endregion
 
     }
 
@@ -61,25 +127,33 @@ namespace Hyperspace.Redis
         public RedisBatch<TContext> Done([NotNull] Action<TContext> commands)
         {
             Check.NotNull(commands, nameof(commands));
-
+            using (new ScopeDaemon(this))
+            {
+                commands(Context);
+            }
             return this;
         }
 
         public RedisBatch<TContext, TResults> Done<TResults>([NotNull] Func<TContext, TResults> commands)
         {
             Check.NotNull(commands, nameof(commands));
-
-            var results = commands(Context);
-
+            TResults results;
+            using (new ScopeDaemon(this))
+            {
+                results = commands(Context);
+            }
             return new RedisBatch<TContext, TResults>(this, results);
+
         }
 
         public RedisBatch<TContext, IEnumerable<TResult>> Done<TResult>([NotNull] Func<TContext, IEnumerable<TResult>> commands)
         {
             Check.NotNull(commands, nameof(commands));
-
-            var results = commands(Context);
-
+            IEnumerable<TResult> results;
+            using (new ScopeDaemon(this))
+            {
+                results = commands(Context);
+            }
             return new RedisBatch<TContext, IEnumerable<TResult>>(this, results);
         }
 
@@ -108,34 +182,32 @@ namespace Hyperspace.Redis
 
     }
 
-    public abstract class RedisTransaction : IDisposable
+    public abstract class RedisTransaction : RedisContextScope
     {
-        protected internal RedisTransaction([NotNull] RedisContext context)
+        protected internal RedisTransaction([NotNull] RedisContext context) : base(context)
         {
-            Check.NotNull(context, nameof(context));
-
-            Context = context;
-            Transaction = context.Database.CreateTransaction();
+            Transaction = Context.Database.Database.CreateTransaction();
         }
 
-        protected internal RedisTransaction([NotNull] RedisContext context, [NotNull] ITransaction transaction)
+        protected internal RedisTransaction([NotNull] RedisContext context, [NotNull] ITransaction transaction) : base(context)
         {
-            Check.NotNull(context, nameof(context));
             Check.NotNull(transaction, nameof(transaction));
 
-            Context = context;
             Transaction = transaction;
         }
 
-        protected internal RedisContext Context { get; }
-
         protected internal ITransaction Transaction { get; }
+
+        internal override IDatabaseAsync AsyncFunc
+        {
+            get { return Transaction; }
+        }
 
         public RedisTransaction When([NotNull] Action<RedisCondition> condition)
         {
             Check.NotNull(condition, nameof(condition));
 
-            condition.Invoke(new RedisCondition(Transaction));
+            condition.Invoke(new RedisCondition(Context, Transaction));
             return this;
         }
 
@@ -148,14 +220,6 @@ namespace Hyperspace.Redis
         {
             return Transaction.ExecuteAsync();
         }
-
-        #region IDisposable
-
-        void IDisposable.Dispose()
-        {
-        }
-
-        #endregion
 
     }
 
@@ -176,18 +240,21 @@ namespace Hyperspace.Redis
 
         protected internal Type ResultsType { get; set; }
 
-        public new RedisTransaction<TContext> When([NotNull] Action<RedisCondition> condition)
+        public RedisTransaction<TContext> When([NotNull] Action<RedisCondition<TContext>> condition)
         {
             Check.NotNull(condition, nameof(condition));
 
-            condition.Invoke(new RedisCondition(Transaction));
+            condition.Invoke(new RedisCondition<TContext>(Context, Transaction));
             return this;
         }
 
         public RedisTransaction<TContext> Done([NotNull] Action<TContext> commands)
         {
             Check.NotNull(commands, nameof(commands));
-
+            using (new ScopeDaemon(this))
+            {
+                commands(Context);
+            }
             return this;
         }
 
@@ -198,9 +265,11 @@ namespace Hyperspace.Redis
             if (ResultsType != null)
                 throw new InvalidOperationException();
             ResultsType = typeof(TResults);
-
-            var results = commands(Context);
-
+            TResults results;
+            using (new ScopeDaemon(this))
+            {
+                results = commands(Context);
+            }
             return new RedisTransaction<TContext, TResults>(this, results);
         }
 
@@ -211,9 +280,11 @@ namespace Hyperspace.Redis
             if (ResultsType != null)
                 throw new InvalidOperationException();
             ResultsType = typeof(IEnumerable<TResult>);
-
-            var results = commands(Context);
-
+            IEnumerable<TResult> results;
+            using (new ScopeDaemon(this))
+            {
+                results = commands(Context);
+            }
             return new RedisTransaction<TContext, IEnumerable<TResult>>(this, results);
         }
 
@@ -267,10 +338,15 @@ namespace Hyperspace.Redis
 
     public class RedisCondition
     {
+        private readonly RedisContext _context;
         private readonly ITransaction _transaction;
 
-        protected internal RedisCondition(ITransaction transaction)
+        protected internal RedisCondition([NotNull] RedisContext context, [NotNull] ITransaction transaction)
         {
+            Check.NotNull(context, nameof(context));
+            Check.NotNull(transaction, nameof(transaction));
+
+            _context = context;
             _transaction = transaction;
         }
 
@@ -314,6 +390,13 @@ namespace Hyperspace.Redis
             return _transaction.AddCondition(Condition.StringNotEqual(key, value)).WasSatisfied;
         }
 
+    }
+
+    public class RedisCondition<TContext> : RedisCondition where TContext : RedisContext
+    {
+        protected internal RedisCondition(TContext context, ITransaction transaction) : base(context, transaction)
+        {
+        }
     }
 
     public static class RedisContextExtensions
