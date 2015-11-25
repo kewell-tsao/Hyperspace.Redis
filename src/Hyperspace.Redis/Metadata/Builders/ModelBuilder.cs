@@ -61,7 +61,7 @@ namespace Hyperspace.Redis.Metadata.Builders
             return types.First();
         }
 
-        internal abstract ModelMetadata Complete();
+        internal abstract RedisModelMetadata Complete();
 
         public ModelBuilder<TContext> As<TContext>() where TContext : RedisContext
         {
@@ -72,11 +72,11 @@ namespace Hyperspace.Redis.Metadata.Builders
 
     public class ModelBuilder<TContext> : ModelBuilder where TContext : RedisContext
     {
-        private readonly ModelMetadata _metadata;
+        private readonly RedisModelMetadata _metadata;
 
         public ModelBuilder()
         {
-            _metadata = new ModelMetadata
+            _metadata = new RedisModelMetadata
             {
                 ClrType = typeof(TContext),
                 Name = typeof(TContext).GetTypeInfo().Name
@@ -136,7 +136,7 @@ namespace Hyperspace.Redis.Metadata.Builders
             return this;
         }
 
-        internal override ModelMetadata Complete()
+        internal override RedisModelMetadata Complete()
         {
             return _metadata;
         }
@@ -154,11 +154,11 @@ namespace Hyperspace.Redis.Metadata.Builders
             _metadata = metadata;
         }
 
-        public EntryBuilder<TEntry> MapTo([NotNull] string token)
+        public EntryBuilder<TEntry> MapTo([NotNull] string alias)
         {
-            Check.NotEmpty(token, nameof(token));
+            Check.NotEmpty(alias, nameof(alias));
 
-            _metadata.Token = token;
+            _metadata.Alias = alias;
 
             return this;
         }
@@ -232,7 +232,7 @@ namespace Hyperspace.Redis.Metadata.Builders
         {
             Check.NotEmpty(token, nameof(token));
 
-            _metadata.Token = token;
+            _metadata.Alias = token;
             return this;
         }
 

@@ -22,11 +22,11 @@ namespace Hyperspace.Redis
         private IServiceScope _serviceScope;
         private LazyRef<RedisContextServices> _contextServices;
 
-        private ModelMetadata _metadata;
+        private RedisModelMetadata _metadata;
         private RedisDatabase _database;
         private Dictionary<string, RedisEntry> _entryCache;
         private static readonly ConcurrentDictionary<Type, Type> OptionsTypes = new ConcurrentDictionary<Type, Type>();
-        private static readonly ConcurrentDictionary<Type, ModelMetadata> Metadatas = new ConcurrentDictionary<Type, ModelMetadata>();
+        private static readonly ConcurrentDictionary<Type, RedisModelMetadata> Metadatas = new ConcurrentDictionary<Type, RedisModelMetadata>();
 
         protected RedisContext()
         {
@@ -119,7 +119,7 @@ namespace Hyperspace.Redis
             }
         }
 
-        private ModelMetadata GetMetadata()
+        private RedisModelMetadata GetMetadata()
         {
             var contextType = GetType();
             var metadata = Metadatas.GetOrAdd(contextType, t =>

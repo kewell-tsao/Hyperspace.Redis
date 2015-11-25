@@ -20,7 +20,7 @@ namespace Hyperspace.Redis.Internal
 
         public RedisContext Context { get; private set; }
         public IRedisContextOptions ContextOptions { get; private set; }
-        public ModelMetadata Model { get; private set; }
+        public RedisModelMetadata RedisModel { get; private set; }
         public IServiceProvider ServiceProvider { get; private set; }
 
     }

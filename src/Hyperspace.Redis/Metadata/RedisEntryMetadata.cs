@@ -1,36 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
-using System.Reflection;
-using Hyperspace.Redis.Internal;
+﻿using Hyperspace.Redis.Internal;
+using Hyperspace.Redis.Metadata.Internal;
+using System;
+using System.Diagnostics;
+using System.Text;
 
 namespace Hyperspace.Redis.Metadata
 {
-    public class MetadataElement
-    {
-        public bool IsFrozen { get; private set; }
-    }
-
-    public class ModelMetadata : MetadataElement
-    {
-        public ModelMetadata()
-        {
-            Activator = new RedisEntryActivator(this);
-        }
-
-        public string Name { get; set; }
-        public string Prefix { get; set; }
-        public Type ClrType { get; set; }
-
-        public ICollection<RedisEntryMetadata> Children { get; } = new List<RedisEntryMetadata>();
-
-        internal RedisEntryActivator Activator { get; } 
-    }
-
     public class RedisEntryMetadata : MetadataElement
     {
+        private RedisModelMetadata _model;
+        private string _name;
+        private string _alias;
+        private RedisEntryType _entryType;
+        private Type _clrType;
+        private Type _identifierClrType;
+        private Type _identifierConverterType;
+        private RedisEntryMetadata _parent;
+
         public RedisEntryMetadata() : this(false)
         {
         }
@@ -38,27 +24,98 @@ namespace Hyperspace.Redis.Metadata
         public RedisEntryMetadata(bool isEntrySet)
         {
             IsEntrySet = isEntrySet;
-            if (IsEntrySet)
-                Children = new LimitedCollection<RedisEntryMetadata>(1);
-            else
-                Children = new List<RedisEntryMetadata>();
+            Children = IsEntrySet ? new MetadataElementCollection<RedisEntryMetadata>(1) : new MetadataElementCollection<RedisEntryMetadata>();
         }
 
         public bool IsEntrySet { get; }
 
-        public ModelMetadata Model { get; set; }
+        public RedisModelMetadata Model
+        {
+            get { return _model; }
+            set { SetValue(ref _model, value); }
+        }
 
-        public string Name { get; set; }
-        public string Token { get; set; }
-        public RedisEntryType EntryType { get; set; }
-        public Type ClrType { get; set; }
-        public Type IdentifierClrType { get; set; }
-        public Type IdentifierConverterType { get; set; }
+        public string Name
+        {
+            get { return _name; }
+            set { SetValue(ref _name, value); }
+        }
 
-        public RedisEntryMetadata Parent { get; set; }
-        public ICollection<RedisEntryMetadata> Children { get; }
+        public string Alias
+        {
+            get { return _alias; }
+            set { SetValue(ref _alias, value); }
+        }
+
+        public RedisEntryType EntryType
+        {
+            get { return _entryType; }
+            set { SetValue(ref _entryType, value); }
+        }
+
+        public Type ClrType
+        {
+            get { return _clrType; }
+            set { SetValue(ref _clrType, value); }
+        }
+
+        public Type IdentifierClrType
+        {
+            get { return _identifierClrType; }
+            set { SetValue(ref _identifierClrType, value); }
+        }
+
+        public Type IdentifierConverterType
+        {
+            get { return _identifierConverterType; }
+            set { SetValue(ref _identifierConverterType, value); }
+        }
+
+        public RedisEntryMetadata Parent
+        {
+            get { return _parent; }
+            set { SetValue(ref _parent, value); }
+        }
+
+        public MetadataElementCollection<RedisEntryMetadata> Children { get; }
 
         internal RedisEntryActivator Activator { get; set; }
-    }
 
+        private string _identifierCache;
+
+        public string GetIdentifier()
+        {
+            if (string.IsNullOrEmpty(_identifierCache))
+            {
+                const char separator = ':';
+                var builder = new StringBuilder();
+                var metadata = this;
+                while (metadata != null)
+                {
+                    builder.Insert(0, string.IsNullOrEmpty(metadata.Alias) ? metadata.Name : metadata.Alias);
+                    builder.Insert(0, separator);
+                    metadata = metadata.Parent;
+                }
+                if (string.IsNullOrEmpty(Model?.Prefix))
+                {
+                    Debug.Assert(builder[0] == separator);
+                    builder.Remove(0, 1);
+                }
+                else
+                {
+                    builder.Insert(0, Model.Prefix);
+                }
+                return builder.ToString();
+            }
+            return _identifierCache;
+        }
+
+        protected override void FreezeCore()
+        {
+            Children.Freeze();
+
+            _identifierCache = GetIdentifier();
+        }
+
+    }
 }

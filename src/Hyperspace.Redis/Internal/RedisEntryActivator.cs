@@ -11,9 +11,9 @@ namespace Hyperspace.Redis.Internal
 {
     public class RedisEntryActivator
     {
-        private readonly ModelMetadata _metadata;
+        private readonly RedisModelMetadata _metadata;
 
-        public RedisEntryActivator([NotNull] ModelMetadata metadata)
+        public RedisEntryActivator([NotNull] RedisModelMetadata metadata)
         {
             Check.NotNull(metadata, nameof(metadata));
 
@@ -66,4 +66,11 @@ namespace Hyperspace.Redis.Internal
 
     }
 
+    public class RedisEntryActivatorSource
+    {
+        private RedisModelMetadata _model;
+        private RedisEntryActivator _entryActivator;
+        private Dictionary<string, RedisEntryActivator> _subEntryActivator;
+
+    }
 }
