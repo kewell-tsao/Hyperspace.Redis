@@ -66,6 +66,15 @@ namespace Hyperspace.Redis.Tests
                    {
                        var aa = r;
                    });
+
+                context.BeginTransaction()
+                    .When(c => c.HashExists("", ""))
+                    .Done(c =>
+                    {
+                        c.Announcement.SetAsync("");
+                        c.Announcement.SetAsync("");
+                    })
+                    .Execute();
             }
 
             //context.Discussions["123"].CountViews.Increment();

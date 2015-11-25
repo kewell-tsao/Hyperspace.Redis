@@ -1,73 +1,26 @@
 ﻿using Hyperspace.Redis.Infrastructure;
 using Hyperspace.Redis.Internal;
+using Hyperspace.Redis.Metadata;
+using Hyperspace.Redis.Metadata.Builders;
 using Hyperspace.Redis.Properties;
 using Hyperspace.Redis.Storage;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using StackExchange.Redis;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Hyperspace.Redis.Metadata;
-using Hyperspace.Redis.Metadata.Builders;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using Microsoft.Extensions.Logging;
 
 namespace Hyperspace.Redis
 {
-    public class RedisEntryActivator
-    {
-        private readonly ModelMetadata _metadata;
-
-        public RedisEntryActivator(ModelMetadata metadata)
-        {
-            _metadata = metadata;
-        }
-
-        public TEntry CreateInstance<TEntry>(RedisContext context, string name) where TEntry : RedisEntry
-        {
-            var entryMetadata = _metadata.Children.SingleOrDefault(m => m.Name == name && m.ClrType == typeof(TEntry));
-
-            return null;
-        }
-
-        public TEntry CreateInstance<TEntry>(RedisEntry parent, string name) where TEntry : RedisEntry
-        {
-            return null;
-        }
-
-        public TEntry CreateInstance<TEntry, TIdentifier>(RedisEntrySet<TEntry, TIdentifier> parent, TIdentifier identifier) where TEntry : RedisEntry
-        {
-            return null;
-        }
-
-        private Func<RedisKey, RedisEntryMetadata, RedisContext, RedisEntry, TEntry> CreateConstructor<TEntry>() where TEntry : RedisEntry
-        {
-            var p0 = Expression.Parameter(typeof(RedisKey), "key");
-            var p1 = Expression.Parameter(typeof(RedisEntryMetadata), "metadata");
-            var p2 = Expression.Parameter(typeof(RedisContext), "context");
-            var p3 = Expression.Parameter(typeof(RedisEntry), "parent");
-            var entryType = typeof(TEntry);
-            var entryConstructorInfo = entryType.GetConstructor(new[] { p0.Type, p1.Type, p2.Type, p3.Type });
-            if (entryConstructorInfo == null)
-                throw new InvalidOperationException();
-            var entryConstructor = Expression.Lambda<Func<RedisKey, RedisEntryMetadata, RedisContext, RedisEntry, TEntry>>(
-                Expression.New(entryConstructorInfo, p0, p1, p2, p3), p0, p1, p2, p3).Compile();
-            return entryConstructor;
-        }
-
-    }
-
     public class RedisContext : IDisposable, IInfrastructure<IServiceProvider>
     {
         private bool _disposed;
         private bool _initializing;
         private ILogger _logger;
         private IServiceScope _serviceScope;
-        //private LazyRef<IDbContextServices> _contextServices;
+        private LazyRef<RedisContextServices> _contextServices;
 
         private ModelMetadata _metadata;
         private RedisDatabase _database;
@@ -103,25 +56,67 @@ namespace Hyperspace.Redis
             Initialize(serviceProvider, options);
         }
 
+        #region Internal Properties
+
         internal RedisDatabase Database
         {
             get { return _database; }
         }
 
-        private IServiceProvider ServiceProvider
+        internal IServiceProvider ServiceProvider
         {
             get
             {
                 if (_disposed)
                     throw new ObjectDisposedException(GetType().Name);
-                return null;
-                //return _contextServices.Value.ServiceProvider;
+                return _contextServices.Value.ServiceProvider;
             }
         }
 
-        internal T GetRequiredService<T>()
+        #endregion
+
+        #region Initialize Methods
+
+        private void Initialize(IServiceProvider serviceProvider, RedisContextOptions options)
         {
-            return ServiceProvider.GetRequiredService<T>();
+            _contextServices = new LazyRef<RedisContextServices>(() => InitializeServices(serviceProvider, options));
+
+            var connectionProvider = serviceProvider.GetRequiredService<IRedisConnectionProvider>();
+            _database = (RedisDatabase)connectionProvider.ConnectAndSelect(options);
+            _entryCache = new Dictionary<string, RedisEntry>(_metadata.Children.Count);
+            _metadata = GetMetadata();
+        }
+
+        private RedisContextServices InitializeServices(IServiceProvider serviceProvider, RedisContextOptions options)
+        {
+            if (_initializing)
+                throw new InvalidOperationException(Strings.RecursiveOnConfiguring);
+
+            try
+            {
+                _initializing = true;
+
+                var optionsBuilder = new RedisContextOptionsBuilder(options);
+
+                OnConfiguring(optionsBuilder);
+
+                serviceProvider = serviceProvider ?? ServiceProviderCache.Instance.GetOrAdd(optionsBuilder.Options);
+
+                _logger = serviceProvider.GetRequiredService<ILogger<RedisContext>>();
+
+                _serviceScope = serviceProvider
+                    .GetRequiredService<IServiceScopeFactory>()
+                    .CreateScope();
+
+                var scopedServiceProvider = _serviceScope.ServiceProvider;
+
+                return scopedServiceProvider.GetRequiredService<RedisContextServices>()
+                    .Initialize(scopedServiceProvider, optionsBuilder.Options, this);
+            }
+            finally
+            {
+                _initializing = false;
+            }
         }
 
         private ModelMetadata GetMetadata()
@@ -129,7 +124,8 @@ namespace Hyperspace.Redis
             var contextType = GetType();
             var metadata = Metadatas.GetOrAdd(contextType, t =>
             {
-                var modelBuilder = (ModelBuilder)Activator.CreateInstance(typeof(ModelBuilder<>).MakeGenericType(contextType));
+                var modelBuilder =
+                    (ModelBuilder)Activator.CreateInstance(typeof(ModelBuilder<>).MakeGenericType(contextType));
                 OnModelCreating(modelBuilder);
                 return modelBuilder.Complete();
             });
@@ -142,7 +138,8 @@ namespace Hyperspace.Redis
                 return new RedisContextOptions<RedisContext>();
 
             var genericOptions = OptionsTypes.GetOrAdd(GetType(), t => typeof(RedisContextOptions<>).MakeGenericType(t));
-            var options = (RedisContextOptions)serviceProvider.GetService(genericOptions) ?? serviceProvider.GetService<RedisContextOptions>();
+            var options = (RedisContextOptions)serviceProvider.GetService(genericOptions) ??
+                          serviceProvider.GetService<RedisContextOptions>();
 
             if (options != null && options.GetType() != genericOptions)
                 throw new InvalidOperationException(Strings.NonGenericOptions);
@@ -150,13 +147,9 @@ namespace Hyperspace.Redis
             return options ?? new RedisContextOptions<RedisContext>();
         }
 
-        private void Initialize(IServiceProvider serviceProvider, RedisContextOptions options)
-        {
-            var connectionProvider = serviceProvider.GetRequiredService<IRedisConnectionProvider>();
-            _database = (RedisDatabase)connectionProvider.ConnectAndSelect(options);
-            _entryCache = new Dictionary<string, RedisEntry>(_metadata.Children.Count);
-            _metadata = GetMetadata();
-        }
+        #endregion
+
+        #region Get Entry Methods
 
         protected TEntry GetEntry<TEntry>([CallerMemberName] string name = null) where TEntry : RedisEntry
         {
@@ -179,7 +172,8 @@ namespace Hyperspace.Redis
             }
         }
 
-        protected RedisEntrySet<TEntry, TIdentifier> GetEntry<TEntry, TIdentifier>([CallerMemberName] string name = null) where TEntry : RedisEntry
+        protected RedisEntrySet<TEntry, TIdentifier> GetEntry<TEntry, TIdentifier>([CallerMemberName] string name = null)
+            where TEntry : RedisEntry
         {
             Check.NotEmpty(name, nameof(name));
 
@@ -201,10 +195,21 @@ namespace Hyperspace.Redis
             }
         }
 
+        #endregion
+
+        #region Configuring Methods
+
+        protected internal virtual void OnConfiguring(RedisContextOptionsBuilder optionsBuilder)
+        {
+        }
+
         protected internal virtual void OnModelCreating(ModelBuilder modelBuilder)
         {
-
         }
+
+        #endregion
+
+        #region Public Methods
 
         public RedisBatch<T> BeginBatch<T>() where T : RedisContext
         {
@@ -215,6 +220,8 @@ namespace Hyperspace.Redis
         {
             return new RedisTransaction<T>((T)this);
         }
+
+        #endregion
 
         #region IDisposable
 
@@ -233,5 +240,4 @@ namespace Hyperspace.Redis
         #endregion
 
     }
-
 }

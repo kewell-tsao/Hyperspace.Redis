@@ -1,10 +1,11 @@
 ﻿using Hyperspace.Redis.Infrastructure;
+using Hyperspace.Redis.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Hyperspace.Redis.Metadata;
 
 namespace Hyperspace.Redis
 {
@@ -20,7 +21,7 @@ namespace Hyperspace.Redis
 
         public RedisSet(RedisKey key, RedisEntryMetadata metadata, RedisContext context, RedisEntry parent) : base(key, metadata, context, parent)
         {
-            Converter = new Lazy<IRedisValueConverter>(() => Context.GetRequiredService<IRedisValueConverter>());
+            Converter = new Lazy<IRedisValueConverter>(() => Context.ServiceProvider.GetRequiredService<IRedisValueConverter>());
         }
 
         protected readonly Lazy<IRedisValueConverter> Converter;
