@@ -12,7 +12,10 @@ namespace Hyperspace.Redis.Internal
     {
         public RedisContextServices Initialize([NotNull] IServiceProvider scopedServiceProvider, [NotNull] IRedisContextOptions contextOptions, [NotNull] RedisContext context)
         {
+            Check.NotNull(scopedServiceProvider, nameof(scopedServiceProvider));
+
             ServiceProvider = scopedServiceProvider;
+            Context = context;
             ContextOptions = contextOptions;
 
             return this;
@@ -20,7 +23,8 @@ namespace Hyperspace.Redis.Internal
 
         public RedisContext Context { get; private set; }
         public IRedisContextOptions ContextOptions { get; private set; }
-        public RedisModelMetadata RedisModel { get; private set; }
+        public RedisModelMetadata ModelMetadata { get; private set; }
+        public RedisEntryActivator Activator { get; private set; }
         public IServiceProvider ServiceProvider { get; private set; }
 
     }

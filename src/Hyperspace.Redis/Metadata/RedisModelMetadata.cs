@@ -12,7 +12,6 @@ namespace Hyperspace.Redis.Metadata
 
         public RedisModelMetadata()
         {
-            Activator = new RedisEntryActivator(this);
             Children = new MetadataElementCollection<RedisEntryMetadata>();
         }
 
@@ -35,8 +34,6 @@ namespace Hyperspace.Redis.Metadata
         }
 
         public MetadataElementCollection<RedisEntryMetadata> Children { get; }
-
-        internal RedisEntryActivator Activator { get; }
 
         protected override void FreezeCore()
         {

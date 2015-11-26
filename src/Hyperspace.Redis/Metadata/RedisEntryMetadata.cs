@@ -79,8 +79,6 @@ namespace Hyperspace.Redis.Metadata
 
         public MetadataElementCollection<RedisEntryMetadata> Children { get; }
 
-        internal RedisEntryActivator Activator { get; set; }
-
         private string _identifierCache;
 
         public string GetIdentifier()
@@ -92,7 +90,14 @@ namespace Hyperspace.Redis.Metadata
                 var metadata = this;
                 while (metadata != null)
                 {
-                    builder.Insert(0, string.IsNullOrEmpty(metadata.Alias) ? metadata.Name : metadata.Alias);
+                    if (metadata.Parent?.IsEntrySet ?? false)
+                    {
+                        builder.Insert(0, "[*]");
+                    }
+                    else
+                    {
+                        builder.Insert(0, string.IsNullOrEmpty(metadata.Alias) ? metadata.Name : metadata.Alias);
+                    }
                     builder.Insert(0, separator);
                     metadata = metadata.Parent;
                 }
