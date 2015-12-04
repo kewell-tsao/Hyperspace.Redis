@@ -27,7 +27,7 @@ namespace Hyperspace.Redis
                         throw new InvalidOperationException();
                     return result;
                 }
-                result = Metadata.Activator.CreateInstance(this, identifier);
+                result = Context.Services.Activator.CreateInstance(this, identifier);
                 if (result == null)
                     throw new InvalidOperationException();
                 if (_cache == null)

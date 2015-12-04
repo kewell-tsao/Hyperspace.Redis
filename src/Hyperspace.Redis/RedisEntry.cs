@@ -198,7 +198,7 @@ namespace Hyperspace.Redis
             }
             else
             {
-                var result = Metadata.Activator.CreateInstance<TEntry>(this, name);
+                var result = Context.Services.Activator.CreateInstance<TEntry>(this, name);
                 if (result == null)
                     throw new InvalidOperationException();
                 if (_cache == null)

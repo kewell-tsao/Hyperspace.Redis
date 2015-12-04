@@ -34,18 +34,18 @@ namespace Hyperspace.Redis
             Initialize(serviceProvider, GetOptions(serviceProvider));
         }
 
-        public RedisContext([NotNull] IServiceProvider serviceProvider)
-        {
-            Check.NotNull(serviceProvider, nameof(serviceProvider));
-
-            Initialize(serviceProvider, GetOptions(serviceProvider));
-        }
-
         public RedisContext([NotNull] RedisContextOptions options)
         {
             Check.NotNull(options, nameof(options));
 
             Initialize(RedisContextActivator.ServiceProvider, options);
+        }
+
+        public RedisContext([NotNull] IServiceProvider serviceProvider)
+        {
+            Check.NotNull(serviceProvider, nameof(serviceProvider));
+
+            Initialize(serviceProvider, GetOptions(serviceProvider));
         }
 
         public RedisContext([NotNull] IServiceProvider serviceProvider, [NotNull] RedisContextOptions options)
@@ -72,6 +72,8 @@ namespace Hyperspace.Redis
                 return _contextServices.Value.ServiceProvider;
             }
         }
+
+        internal RedisContextServices Services => _contextServices.Value;
 
         #endregion
 
@@ -164,7 +166,7 @@ namespace Hyperspace.Redis
             }
             else
             {
-                var result = _metadata.Activator.CreateInstance<TEntry>(this, name);
+                var result = Services.Activator.CreateInstance<TEntry>(this, name);
                 if (result == null)
                     throw new InvalidOperationException();
                 _entryCache.Add(name, result);
@@ -187,7 +189,7 @@ namespace Hyperspace.Redis
             }
             else
             {
-                var result = _metadata.Activator.CreateInstance<RedisEntrySet<TEntry, TIdentifier>>(this, name);
+                var result = Services.Activator.CreateInstance<RedisEntrySet<TEntry, TIdentifier>>(this, name);
                 if (result == null)
                     throw new InvalidOperationException();
                 _entryCache.Add(name, result);

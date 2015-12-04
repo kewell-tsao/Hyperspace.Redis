@@ -12,6 +12,7 @@ namespace Hyperspace.Redis.Internal
     public class RedisEntryActivator
     {
         private readonly RedisModelMetadata _metadata;
+        private readonly Dictionary<RedisEntryMetadata, Dictionary<string, EntryBuilder>> _factories;
 
         public RedisEntryActivator([NotNull] RedisModelMetadata metadata)
         {
@@ -35,6 +36,13 @@ namespace Hyperspace.Redis.Internal
             Check.NotNull(parent, nameof(parent));
             Check.NotNull(parent.Context, nameof(parent), nameof(parent.Context));
             Check.NotEmpty(name, nameof(name));
+
+            EntryBuilder factoriy;
+            Dictionary<string, EntryBuilder> factories;
+            if (!_factories.TryGetValue(parent.Metadata, out factories))
+                throw new InvalidOperationException();
+            if (!factories.TryGetValue(name, out factoriy))
+                throw new InvalidOperationException();
 
             return null;
         }
@@ -66,11 +74,32 @@ namespace Hyperspace.Redis.Internal
 
     }
 
-    public class RedisEntryActivatorSource
+    public abstract class EntryBuilder
     {
-        private RedisModelMetadata _model;
-        private RedisEntryActivator _entryActivator;
-        private Dictionary<string, RedisEntryActivator> _subEntryActivator;
-
     }
+
+    public class RooEntryBuilder<TEntry> : EntryBuilder where TEntry : RedisEntry
+    {
+        public TEntry Create([NotNull] RedisContext context)
+        {
+            return null;
+        }
+    }
+
+    public class SubEntryBuilder<TEntry> : EntryBuilder where TEntry : RedisEntry
+    {
+        public TEntry Create([NotNull] RedisEntry parent)
+        {
+            return null;
+        }
+    }
+
+    public class IteEntryBuilder<TEntry, TIdentifier> : EntryBuilder where TEntry : RedisEntry
+    {
+        public TEntry Create([NotNull] RedisEntrySet<TEntry, TIdentifier> parent, [NotNull] TIdentifier identifier)
+        {
+            return null;
+        }
+    }
+
 }
