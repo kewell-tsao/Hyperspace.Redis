@@ -96,7 +96,7 @@ namespace Hyperspace.Redis.Metadata
                     }
                     else
                     {
-                        builder.Insert(0, string.IsNullOrEmpty(metadata.Alias) ? metadata.Name : metadata.Alias);
+                        builder.Insert(0, metadata.Name);
                     }
                     builder.Insert(0, separator);
                     metadata = metadata.Parent;

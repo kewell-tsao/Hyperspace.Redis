@@ -120,6 +120,12 @@ namespace Hyperspace.Redis.Metadata.Builders
                 Name = GetPropertyName(property),
                 ClrType = GetPropertyType(property)
             };
+            metadata.Children.Add(new RedisEntryMetadata()
+            {
+                Model = _metadata,
+                ClrType = typeof(TEntry),
+                EntryType = GetEntryType(typeof(TEntry))
+            });
             return new EntrySetBuilder<TEntry, TIdentifier>(metadata);
         }
 
